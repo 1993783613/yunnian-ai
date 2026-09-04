@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#050913">
+  <meta name="description" content="云念AI - 创建你的 AI 数字人，上传形象、选择音色，创建完成后即可发起实时语音或视频通话。">
+  <meta name="keywords" content="云念AI,AI数字人,实时通话,语音通话,视频通话,音色克隆,数字人创建">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2335e6d0'/%3E%3Cstop offset='100%25' stop-color='%232bc4b2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23g)' d='M50 20c-8 0-15 5-18 12-10 0-18 8-18 18s8 18 18 18h36c8 0 15-7 15-15s-7-15-15-15c-1-10-9-18-18-18z'/%3E%3C/svg%3E">
+  <title>云念AI</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+<div class="phone-shell" id="app">
+
+  <!-- ============================================ -->
+  <!-- 页面 1: 首页（未登录）-->
+  <!-- ============================================ -->
+  <div class="page active" id="page-landing">
+    <div class="landing">
+      <div class="landing-stars" id="starsBg"></div>
+      <div class="landing-logo">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logoG" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#35e6d0"/>
+              <stop offset="100%" stop-color="#2bc4b2"/>
+            </linearGradient>
+          </defs>
+          <path fill="url(#logoG)" d="M50 20c-8 0-15 5-18 12-10 0-18 8-18 18s8 18 18 18h36c8 0 15-7 15-15s-7-15-15-15c-1-10-9-18-18-18z"/>
+        </svg>
+      </div>
+      <div class="landing-title">云念AI</div>
+      <div class="landing-subtitle">让思念留在云端</div>
+      <div class="landing-main">
+        <h1 class="landing-heading">创建你的 AI 数字人</h1>
+        <p class="landing-desc">上传形象、选择音色，<br>创建完成后即可发起实时语音或视频通话。</p>
+        <button class="btn btn-primary landing-cta" onclick="navigate('auth')">创建角色</button>
+        <button class="btn btn-ghost" onclick="navigate('auth')">登录</button>
+      </div>
+      <div class="landing-footer"><p>湘ICP备2026034947号-1</p></div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 2: 登录/注册 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-auth">
+    <div class="topbar">
+      <button class="topbar-back" onclick="navigate('landing')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>返回首页
+      </button>
+    </div>
+    <div class="auth-page">
+      <div class="auth-logo">
+        <div class="auth-logo-icon">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="56" height="56">
+            <path fill="#35e6d0" d="M50 20c-8 0-15 5-18 12-10 0-18 8-18 18s8 18 18 18h36c8 0 15-7 15-15s-7-15-15-15c-1-10-9-18-18-18z"/>
+          </svg>
+        </div>
+        <div class="auth-title" id="authTitle">创建账号</div>
+        <div class="auth-subtitle" id="authSubtitle">创建账号后即可管理你的数字人与实时会话。</div>
+      </div>
+      <div class="auth-form">
+        <div class="auth-field">
+          <label class="auth-label">账号</label>
+          <input class="auth-input" type="text" id="authAccount" placeholder="请输入账号" autocomplete="off">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label">密码</label>
+          <input class="auth-input" type="password" id="authPassword" placeholder="请输入密码">
+        </div>
+        <div class="auth-field hidden" id="confirmField">
+          <label class="auth-label">确认密码</label>
+          <input class="auth-input" type="password" id="authConfirm" placeholder="请再次输入密码">
+        </div>
+        <div class="auth-consent">
+          <input type="checkbox" id="authAgree">
+          <label for="authAgree">我已阅读并同意当前版本的 <a href="javascript:void(0)" onclick="navigate('agreement')">《用户协议》</a> 和 <a href="javascript:void(0)" onclick="navigate('privacy')">《隐私政策》</a></label>
+        </div>
+        <div class="auth-error hidden" id="authError"></div>
+        <button class="btn btn-primary" id="authSubmit" onclick="handleAuth()">
+          <span id="authSubmitText">注册并登录</span>
+        </button>
+      </div>
+      <div class="auth-switch">
+        <span id="authSwitchText">已有账号？</span>
+        <a href="javascript:void(0)" id="authSwitchLink" onclick="toggleAuthMode()">返回登录</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 3: 创作库 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-library">
+    <div class="topbar">
+      <div class="topbar-title">创作库</div>
+      <button class="topbar-action" onclick="navigate('create')">创建角色</button>
+    </div>
+    <div class="page-content">
+      <div class="library-header">
+        <div class="library-title">亲人实时通话</div>
+        <div class="library-subtitle">数字人需要三到五分钟进行加载创建，完成后即可发起语音或视频通话。</div>
+      </div>
+      <div class="section-label"><span>平台示例</span><span class="label-action">AI 数字人</span></div>
+      <div class="digital-humans-grid" id="digitalHumansGrid">
+        <div class="dh-card" onclick="navigate('call')">
+          <div class="dh-card-photo">
+            <div class="dh-card-badge">可语音/视频</div>
+            <div class="dh-avatar">奶</div>
+          </div>
+          <div class="dh-card-info"><div class="dh-card-name">瑶瑶的奶奶</div><div class="dh-card-relation">我的外婆</div></div>
+          <div class="dh-card-actions">
+            <button onclick="event.stopPropagation();navigate('call')">语音</button>
+            <button onclick="event.stopPropagation();navigate('call')">视频</button>
+          </div>
+        </div>
+        <div class="dh-card" onclick="navigate('call')">
+          <div class="dh-card-photo">
+            <div class="dh-card-badge">可视频通话</div>
+            <div class="dh-avatar">爷</div>
+          </div>
+          <div class="dh-card-info"><div class="dh-card-name">阿哲的爷爷</div><div class="dh-card-relation">最疼我的爷爷</div></div>
+          <div class="dh-card-actions">
+            <button onclick="event.stopPropagation();navigate('call')">语音</button>
+            <button onclick="event.stopPropagation();navigate('call')">视频</button>
+          </div>
+        </div>
+        <div class="create-card" onclick="navigate('create')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>创建第一个角色</span>
+        </div>
+      </div>
+      <div class="section-label"><span>我的数字人</span><span class="label-action">编辑</span></div>
+      <div style="padding: 0 20px 20px; font-size: 13px; color: var(--text-muted);">还没有数字人，点击创建第一个角色</div>
+    </div>
+    <div class="tabbar">
+      <div class="tab-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>创作库</span>
+      </div>
+      <div class="tab-item" onclick="navigate('messages')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>消息</span>
+      </div>
+      <div class="tab-item" onclick="navigate('profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>我的</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 4: 创建角色 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-create">
+    <div class="topbar">
+      <button class="topbar-back" onclick="navigate('library')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>返回创作库
+      </button>
+      <div class="topbar-title">创建新角色</div>
+    </div>
+    <div class="page-content create-page">
+      <div class="create-section">
+        <div class="create-section-title"><span class="num">1</span> 角色形象</div>
+        <div class="create-section-desc">使用单人、正面、光线均匀的照片</div>
+        <div class="upload-area" onclick="handleUpload(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div class="upload-hint">上传照片<br>PNG / JPG · 不超过 10MB</div>
+        </div>
+      </div>
+      <div class="create-section">
+        <div class="create-section-title"><span class="num">2</span> 角色设定</div>
+        <div class="create-section-desc">完善角色的人设与互动方式</div>
+        <div class="form-field"><label class="form-label">姓名</label><input class="form-input" type="text" placeholder="只填写角色名字，例如：瑶瑶的奶奶"></div>
+        <div class="form-field"><label class="form-label">年龄</label><input class="form-input" type="number" placeholder="大概年龄，例如：55"></div>
+        <div class="form-field"><label class="form-label">身份</label><input class="form-input" type="text" placeholder="例如：已故的亲人"></div>
+        <div class="form-field"><label class="form-label">性格</label><input class="form-input" type="text" placeholder="用 2–3 个形容词描述，例如：勤劳，善良，喜欢聊天话多"></div>
+        <div class="form-field"><label class="form-label">与用户关系</label><textarea class="form-textarea" placeholder="说明关系、亲密度和彼此称呼，例如：我的外婆喜欢叫我瑶瑶"></textarea></div>
+      </div>
+      <div class="create-section">
+        <div class="create-section-title"><span class="num">3</span> 音色</div>
+        <div class="create-section-desc">选择平台公共音色，或上传音频克隆音色</div>
+        <div class="voice-tabs">
+          <div class="voice-tab active" onclick="switchVoiceTab(this, 'platform')">平台音色</div>
+          <div class="voice-tab" onclick="switchVoiceTab(this, 'custom')">上传音频克隆</div>
+        </div>
+        <div id="voicePlatform">
+          <!-- 角色分类筛选 -->
+          <div class="voice-category-tabs">
+            <div class="voice-cat-tab active" onclick="filterVoiceCategory(this, 'all')">全部</div>
+            <div class="voice-cat-tab" onclick="filterVoiceCategory(this, 'grandparent')">爷爷奶奶</div>
+            <div class="voice-cat-tab" onclick="filterVoiceCategory(this, 'parent')">妈妈爸爸</div>
+            <div class="voice-cat-tab" onclick="filterVoiceCategory(this, 'youth')">青年小孩子</div>
+          </div>
+
+          <!-- 爷爷奶奶 -->
+          <div class="voice-group-label" data-group="grandparent">爷爷奶奶</div>
+          <div class="voice-option selected" data-category="grandparent" onclick="selectVoice(this)">
+            <div class="voice-option-info"><div class="voice-option-name">慈祥爷爷</div><div class="voice-option-desc">沉稳温暖，语速舒缓，适合祖父角色</div></div>
+            <button class="voice-option-play" onclick="event.stopPropagation();playVoicePreview(this,'慈祥爷爷')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+          </div>
+          <div class="voice-option" data-category="grandparent" onclick="selectVoice(this)">
+            <div class="voice-option-info"><div class="voice-option-name">和蔼奶奶</div><div class="voice-option-desc">柔和亲切，带笑意，适合祖母角色</div></div>
+            <button class="voice-option-play" onclick="event.stopPropagation();playVoicePreview(this,'和蔼奶奶')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+          </div>
+
+          <!-- 妈妈爸爸 -->
+          <div class="voice-group-label" data-group="parent">妈妈爸爸</div>
+          <div class="voice-option" data-category="parent" onclick="selectVoice(this)">
+            <div class="voice-option-info"><div class="voice-option-name">温柔妈妈</div><div class="voice-option-desc">细腻温暖，轻声细语，适合母亲角色</div></div>
+            <button class="voice-option-play" onclick="event.stopPropagation();playVoicePreview(this,'温柔妈妈')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+          </div>
+          <div class="voice-option" data-category="parent" onclick="selectVoice(this)">
+            <div class="voice-option-info"><div class="voice-option-name">沉稳爸爸</div><div class="voice-option-desc">浑厚可靠，中气十足，适合父亲角色</div></div>
+            <button class="voice-option-play" onclick="event.stopPropagation();playVoicePreview(this,'沉稳爸爸')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+          </div>
+
+          <!-- 青年小孩子 -->
+          <div class="voice-group-label" data-group="youth">青年小孩子</div>
+          <div class="voice-option" data-category="youth" onclick="selectVoice(this)">
+            <div class="voice-option-info"><div class="voice-option-name">活泼少女</div><div class="voice-option-desc">清新灵动，朝气蓬勃，适合年轻女性</div></div>
+            <button class="voice-option-play" onclick="event.stopPropagation();playVoicePreview(this,'活泼少女')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+          </div>
+          <div class="voice-option" data-category="youth" onclick="selectVoice(this)">
+            <div class="voice-option-info"><div class="voice-option-name">阳光少年</div><div class="voice-option-desc">清朗朝气，爽朗明快，适合年轻男性</div></div>
+            <button class="voice-option-play" onclick="event.stopPropagation();playVoicePreview(this,'阳光少年')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+          </div>
+          <div class="voice-option" data-category="youth" onclick="selectVoice(this)">
+            <div class="voice-option-info"><div class="voice-option-name">稚嫩童声</div><div class="voice-option-desc">天真可爱，奶声奶气，适合小孩角色</div></div>
+            <button class="voice-option-play" onclick="event.stopPropagation();playVoicePreview(this,'稚嫩童声')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+          </div>
+
+          <div class="voice-empty-hint hidden" id="voiceEmptyHint">该分类暂无可用音色</div>
+        </div>
+        <div id="voiceCustom" class="hidden">
+          <div class="upload-area" style="max-width: 100%; aspect-ratio: 16/9;" onclick="handleUpload(this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            <div class="upload-hint">选择录音文件<br>支持 MP3、M4A、16-bit WAV，10–60 秒且小于 10MB</div>
+          </div>
+        </div>
+      </div>
+      <div class="create-section">
+        <div class="create-section-title"><span class="num">4</span> 素材授权与使用范围</div>
+        <div class="consent-box">
+          <div class="consent-box-title">单独同意 · 角色形象</div>
+          <div class="consent-box-text">照片将用于创建和驱动 AI 数字人，并由业务服务和 AI 服务处理，保留至你撤回、删除或注销。</div>
+          <div class="consent-check">
+            <input type="checkbox" id="consentPhoto">
+            <label for="consentPhoto">我已了解用途、处理方、保存期限与删除方式，并确认拥有合法权利</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="submit-bar">
+      <button class="btn btn-primary" onclick="submitCreate()">同意并创建角色</button>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 5: 实时通话 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-call">
+    <div class="call-page">
+      <div class="call-video-area">
+        <div class="call-info-top">
+          <div class="call-name">瑶瑶的奶奶 <span class="call-ai-badge">AI 数字人</span></div>
+          <div class="call-duration" id="callDuration">00:00</div>
+        </div>
+        <div class="call-remote-video">
+          <div class="call-avatar-large">奶</div>
+          <div class="call-status-text" id="callStatusText"><span class="dot"></span>正在连接数字人…</div>
+        </div>
+        <div class="call-local-preview"><div class="local-placeholder">本地预览</div></div>
+        <div class="call-connecting-overlay" id="callConnecting">
+          <div class="connecting-spinner"></div>
+          <div class="connecting-text">数字人正在准备，首次接通通常需等待 1–2 分钟，<br>完成后会自动接通，请勿退出或重复呼叫。</div>
+        </div>
+      </div>
+      <div class="call-controls">
+        <div class="call-btn" id="micBtn" onclick="toggleCallBtn(this, '麦克风')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+          <span class="call-btn-label">麦克风</span>
+        </div>
+        <div class="call-btn call-btn-hangup" onclick="endCall()">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.17-2.6 2.02-.18.21-.43.32-.68.32-.27 0-.53-.11-.71-.29L.86 13.78a.95.95 0 0 1-.28-.69c0-.27.11-.53.29-.71C3.84 9.74 7.83 8.5 12 8.5s8.16 1.24 11.13 3.88c.18.18.29.44.29.71 0 .27-.11.51-.29.69l-2.99 3.01c-.18.18-.44.29-.71.29-.25 0-.5-.11-.68-.32-.74-.85-1.62-1.53-2.6-2.02-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" transform="rotate(135 12 12)"/></svg>
+        </div>
+        <div class="call-btn" id="camBtn" onclick="toggleCallBtn(this, '摄像头')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          <span class="call-btn-label">摄像头</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 6: 消息 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-messages">
+    <div class="topbar">
+      <div class="topbar-title">消息</div>
+      <button class="topbar-action" onclick="showToast('刷新成功')">刷新</button>
+    </div>
+    <div class="page-content">
+      <div class="message-list">
+        <div class="message-item" onclick="showToast('查看系统消息')">
+          <div class="message-icon system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="message-content"><div class="message-title">系统消息 <span class="message-time">刚刚</span></div><div class="message-preview">查看软件公告与服务通知</div></div>
+          <div class="message-badge"></div>
+        </div>
+        <div class="message-item" onclick="showToast('查看公告')">
+          <div class="message-icon notice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+          <div class="message-content"><div class="message-title">公告中心 <span class="message-time">2小时前</span></div><div class="message-preview">欢迎使用云念AI，新用户赠送10念想值</div></div>
+        </div>
+        <div class="message-item" onclick="navigate('recharge')">
+          <div class="message-icon business"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+          <div class="message-content"><div class="message-title">充值通知 <span class="message-time">昨天</span></div><div class="message-preview">充值成功，念想值已到账</div></div>
+        </div>
+        <div class="message-item" onclick="showToast('查看欢迎消息')">
+          <div class="message-icon system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+          <div class="message-content"><div class="message-title">欢迎消息 <span class="message-time">3天前</span></div><div class="message-preview">欢迎来到云念AI，开始创建你的第一个数字人吧</div></div>
+        </div>
+        <div class="message-item" onclick="showToast('查看业务通知')">
+          <div class="message-icon business"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div class="message-content"><div class="message-title">业务通知 <span class="message-time">3天前</span></div><div class="message-preview">你的数字人"瑶瑶的奶奶"已创建成功</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab-item" onclick="navigate('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>创作库</span></div>
+      <div class="tab-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>消息</span></div>
+      <div class="tab-item" onclick="navigate('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 7: 我的 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-profile">
+    <div class="topbar"><div class="topbar-title">我的</div></div>
+    <div class="page-content">
+      <div class="profile-header">
+        <div class="profile-avatar">用</div>
+        <div class="profile-info"><div class="profile-name">云念用户</div><div class="profile-meta">手机号 · 未绑定</div></div>
+      </div>
+      <div class="profile-balance" onclick="navigate('recharge')">
+        <div class="balance-info"><div class="balance-label">当前念想值余额</div><div class="balance-amount">10</div></div>
+        <button class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 14px;">去充值</button>
+      </div>
+      <div class="menu-list">
+        <div class="menu-item" onclick="navigate('recharge')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+          <div class="menu-text">订单与消费明细</div>
+          <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="menu-item" onclick="showToast('管理个人音色')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>
+          <div class="menu-text">个人音色管理</div>
+          <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="menu-item" onclick="showToast('代理中心')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+          <div class="menu-text">代理中心</div>
+          <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="menu-item" onclick="showToast('合作联系')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+          <div class="menu-text">合作联系</div>
+          <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="menu-item" onclick="showToast('问题反馈')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <div class="menu-text">问题反馈</div>
+          <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="menu-item" onclick="navigate('settings')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+          <div class="menu-text">设置与隐私</div>
+          <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="menu-item" onclick="navigate('landing')">
+          <div class="menu-icon" style="color: var(--color-danger);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
+          <div class="menu-text" style="color: var(--color-danger);">退出登录</div>
+        </div>
+      </div>
+      <div style="padding: 24px 20px; text-align: center; font-size: 12px; color: var(--text-muted);">云念AI · 让思念留在云端<br>湘ICP备2026034947号-1</div>
+    </div>
+    <div class="tabbar">
+      <div class="tab-item" onclick="navigate('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>创作库</span></div>
+      <div class="tab-item" onclick="navigate('messages')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>消息</span></div>
+      <div class="tab-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 8: 充值 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-recharge">
+    <div class="topbar">
+      <button class="topbar-back" onclick="navigate('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>返回</button>
+      <div class="topbar-title">念想值会员中心</div>
+    </div>
+    <div class="page-content">
+      <div class="balance-card">
+        <div class="balance-card-label">当前余额</div>
+        <div class="balance-card-amount">10<span class="balance-card-unit"> 念想值</span></div>
+      </div>
+      <div class="section-label"><span>选择 VIP 套餐</span><span class="label-action">念想值永久有效</span></div>
+      <div class="package-list">
+        <div class="package-card selected" onclick="selectPackage(this)">
+          <div class="package-info"><div class="package-name">新用户专享</div><div class="package-desc">50 念想值 · 首次充值</div></div>
+          <div class="package-price"><div class="price">9.9</div><div class="period">一次性</div></div>
+        </div>
+        <div class="package-card" onclick="selectPackage(this)">
+          <div class="package-tag">推荐</div>
+          <div class="package-info"><div class="package-name">陪伴月卡</div><div class="package-desc">200 念想值 · 含3次音色克隆</div></div>
+          <div class="package-price"><div class="price">68</div><div class="period">/ 月</div></div>
+        </div>
+        <div class="package-card" onclick="selectPackage(this)">
+          <div class="package-info"><div class="package-name">家庭季卡</div><div class="package-desc">800 念想值 · 不限音色克隆</div></div>
+          <div class="package-price"><div class="price">198</div><div class="period">/ 季</div></div>
+        </div>
+        <div class="package-card" onclick="selectPackage(this)">
+          <div class="package-info"><div class="package-name">年度畅享</div><div class="package-desc">5000 念想值 · VIP 全功能</div></div>
+          <div class="package-price"><div class="price">598</div><div class="period">/ 年</div></div>
+        </div>
+      </div>
+      <div style="padding: 20px; font-size: 12px; color: var(--text-muted); line-height: 1.8;">
+        <p>· 念想值永久有效，支付到账后自动增加余额</p>
+        <p>· 每次通话消耗 10 念想值</p>
+        <p>· 音色克隆单独计费，详见套餐说明</p>
+        <p>· 请在微信内打开当前页面后支付</p>
+      </div>
+    </div>
+    <div class="submit-bar">
+      <button class="btn btn-primary" onclick="showToast('请在微信内打开当前页面后支付')">确认微信支付 · ¥9.9</button>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 9: 设置与隐私 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-settings">
+    <div class="topbar">
+      <button class="topbar-back" onclick="navigate('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>返回</button>
+      <div class="topbar-title">设置与隐私</div>
+    </div>
+    <div class="page-content">
+      <div class="privacy-section">
+        <div class="privacy-card">
+          <div class="privacy-card-title">今日记忆</div>
+          <div class="privacy-card-desc">只保存上海自然日内双方最终文字转写，不保存音频；次日不再检索并自动清理。</div>
+          <div class="toggle-row">
+            <div class="toggle-label"><div class="title">让数字人记住今天的对话</div><div class="desc">关闭后立即停止新写入和检索</div></div>
+            <div class="switch on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+        <div class="privacy-card">
+          <div class="privacy-card-title">敏感素材同意记录</div>
+          <div class="privacy-card-desc">撤回同意会立即停止使用并删除业务侧素材。</div>
+          <div class="toggle-row">
+            <div class="toggle-label"><div class="title">人脸/形象处理</div><div class="desc">同意于 2026-09-04</div></div>
+            <button class="text-danger" style="font-size: 13px;" onclick="showToast('已撤回同意，素材已停止使用')">撤回</button>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-label"><div class="title">人声音色克隆</div><div class="desc">同意于 2026-09-04</div></div>
+            <button class="text-danger" style="font-size: 13px;" onclick="showToast('已撤回同意，素材已停止使用')">撤回</button>
+          </div>
+        </div>
+        <div class="privacy-card">
+          <div class="privacy-card-title">协议与处理方</div>
+          <div class="toggle-row" onclick="navigate('agreement')"><div class="toggle-label"><div class="title">用户协议</div></div><div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div></div>
+          <div class="toggle-row" onclick="navigate('privacy')"><div class="toggle-label"><div class="title">隐私政策与第三方处理方</div></div><div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div></div>
+        </div>
+        <div class="privacy-card">
+          <div class="privacy-card-title">账号安全</div>
+          <div class="toggle-row" onclick="showToast('修改密码')"><div class="toggle-label"><div class="title">修改密码</div></div><div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div></div>
+        </div>
+        <div class="privacy-card" style="border-color: rgba(255,57,70,0.3);">
+          <div class="privacy-card-title text-danger">永久注销账号</div>
+          <div class="privacy-card-desc">账号和本地敏感素材将被删除，授权审计记录仅按法定义务保留。此操作不可恢复。</div>
+          <button class="btn btn-danger mt-16" onclick="showToast('请输入当前密码确认注销')">确认永久注销</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 10: 用户协议 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-agreement">
+    <div class="topbar">
+      <button class="topbar-back" onclick="navigate('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>返回</button>
+      <div class="topbar-title">用户协议</div>
+    </div>
+    <div class="page-content" style="padding: 20px; font-size: 14px; line-height: 1.8; color: var(--text-secondary);">
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">服务说明</h3>
+      <p style="margin-bottom: 16px;">云念AI 通过 AI 数字人提供角色创建和实时音视频互动。数字人生成的声音、画面和回复不代表真人意见，不应作为医疗、法律、金融等专业结论。</p>
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">账号责任</h3>
+      <p style="margin-bottom: 16px;">请妥善保管账号和密码，不得出借账号、冒用他人身份或利用服务侵害他人权益。发现异常使用时，请立即通过本公众号联系运营方。</p>
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">素材权利</h3>
+      <p style="margin-bottom: 16px;">仅可提交本人素材、已取得被编辑个人单独同意的素材或拥有完整权利的原创虚拟素材。禁止提交公众人物、未获授权的他人，或未经监护人同意的未成年人脸部和声音。</p>
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">AI 内容标识</h3>
+      <p style="margin-bottom: 16px;">实时互动和资产预览会持续显示"AI 数字人"标识。当前版本不支持下载或导出；未来开放导出时，将同时提供文件显式标识和元数据标识。不得删除、遮挡或篡改依法设置的标识。</p>
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">内容安全</h3>
+      <p style="margin-bottom: 16px;">运营方可以对违法违规、侵权、冒用或高风险素材拒绝处理、停止服务并保留依法处置的必要记录。内容安全能力不可用时，自定义人脸和音色创建将被关闭。</p>
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">注销与联系</h3>
+      <p style="margin-bottom: 16px;">你可以在"设置与隐私"中注销账号。注销前需结束实时会话并验证密码；注销后账号不可恢复。运营主体为本公众号认证主体，可通过本公众号留言联系。</p>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 11: 隐私政策 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-privacy">
+    <div class="topbar">
+      <button class="topbar-back" onclick="navigate('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>返回</button>
+      <div class="topbar-title">隐私政策</div>
+    </div>
+    <div class="page-content" style="padding: 20px; font-size: 14px; line-height: 1.8; color: var(--text-secondary);">
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">个人信息处理者</h3>
+      <p style="margin-bottom: 16px;">个人信息处理者为本公众号认证主体。联系渠道为本公众号留言。</p>
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">处理的信息与目的</h3>
+      <p style="margin-bottom: 16px;">账号和密码摘要用于登录与安全保护；形象图片、人脸特征、参考录音和克隆音色用于创建并驱动 AI 数字人；摄像头和麦克风仅用于你主动发起的实时互动。默认不录音、不录像、不启用全文转录和长期记忆。</p>
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">敏感个人信息</h3>
+      <p style="margin-bottom: 16px;">人脸和人声属于敏感个人信息。创建形象与克隆音色会分别展示处理目的、处理方、保存期限和删除方式，并取得单独同意；拒绝或撤回不会影响账号、系统音色等非相关功能。</p>
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">第三方处理方</h3>
+      <p style="margin-bottom: 16px;">第三方数字人服务商用于数字人实时生成和音色克隆；实时音视频服务商用于音视频传输。可能处理形象、音色、RTC 身份、设备与网络状态等实现服务所需信息。</p>
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">保存期限</h3>
+      <p style="margin-bottom: 16px;">形象图片、参考录音及其业务资产保留至你删除、撤回同意或注销账号；创建失败且未形成业务资产的临时文件会及时清理。为履行法定义务，授权版本、接受与撤回时间等最小审计记录可在必要期限内保留。</p>
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">你的权利</h3>
+      <p style="margin-bottom: 16px;">你可以在"设置与隐私"查看单独同意记录，撤回同意并删除对应资产，也可以注销账号。删除开始后素材立即停止用于新会话。</p>
+      <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">安全与未成年人</h3>
+      <p style="margin-bottom: 16px;">运营方采取访问控制、短期凭证、传输加密和最小日志等措施。未成年人使用及提交相关素材前，应取得监护人同意；禁止提交未经监护人同意的未成年人敏感素材。</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="./js/app.js"></script>
+</body>
+</html>
