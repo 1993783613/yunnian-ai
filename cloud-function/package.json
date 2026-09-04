@@ -1,0 +1,9 @@
+{
+  "name": "yunnian-usersig-server",
+  "version": "1.0.0",
+  "description": "云念AI - TRTC UserSig 签发服务（腾讯云函数）",
+  "main": "index.js",
+  "dependencies": {
+    "tls-sig-api-v2": "^1.0.2"
+  }
+}

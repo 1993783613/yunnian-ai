@@ -1295,3 +1295,68 @@ ul { list-style: none; }
 .empty-state svg { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.4; }
 .empty-state .empty-title { font-size: 15px; margin-bottom: 6px; }
 .empty-state .empty-desc { font-size: 13px; }
+
+/* ============================================
+   TRTC 通话大厅 / 邀请面板 / 视频容器
+   ============================================ */
+.call-lobby {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  text-align: center;
+}
+.lobby-icon {
+  width: 72px; height: 72px; border-radius: 24px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(53, 230, 208, 0.12);
+  color: var(--brand, #35e6d0);
+  margin-bottom: 20px;
+}
+.lobby-icon svg { width: 34px; height: 34px; }
+.lobby-title { font-size: 22px; font-weight: 700; color: var(--text-primary, #fff); margin-bottom: 10px; }
+.lobby-desc { font-size: 13px; color: var(--text-muted, #8a93a6); line-height: 1.7; margin-bottom: 28px; }
+.lobby-form, .join-room-box, .invite-panel {
+  width: 100%; max-width: 320px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.lobby-input {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: var(--text-primary, #fff);
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+.lobby-input:focus { border-color: rgba(53, 230, 208, 0.6); }
+.lobby-input::placeholder { color: var(--text-muted, #8a93a6); }
+.lobby-btn { width: 100%; padding: 13px 16px; border-radius: 12px; font-size: 15px; }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(53, 230, 208, 0.45);
+  color: var(--brand, #35e6d0);
+  cursor: pointer;
+}
+.invite-panel { background: rgba(255,255,255,0.04); border: 1px solid rgba(53,230,208,0.25); border-radius: 16px; padding: 20px 16px; }
+.invite-room-no { font-size: 14px; color: var(--text-muted, #8a93a6); }
+.invite-room-no span { color: var(--brand, #35e6d0); font-size: 22px; font-weight: 700; letter-spacing: 2px; margin-left: 6px; }
+.invite-tip { font-size: 12px; color: var(--text-muted, #8a93a6); text-align: left; }
+.invite-link {
+  font-size: 12px; color: var(--brand, #35e6d0);
+  background: rgba(53,230,208,0.08);
+  border-radius: 8px; padding: 10px 12px;
+  word-break: break-all; text-align: left;
+  user-select: all;
+}
+
+/* 视频容器 */
+.remote-video-box { position: absolute; inset: 0; width: 100%; height: 100%; }
+.remote-video-box video, .call-local-preview video {
+  width: 100%; height: 100%; object-fit: cover; background: transparent;
+}
+.call-local-preview { overflow: hidden; }

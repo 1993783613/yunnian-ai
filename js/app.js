@@ -20,7 +20,7 @@ function navigate(pageId) {
     window.scrollTo(0, 0);
 
     // 页面特定逻辑
-    if (pageId === 'call') startCall();
+    if (pageId === 'call') trtcEnterCall();
     if (pageId === 'landing') generateStars();
   }
 }
@@ -214,52 +214,7 @@ function submitCreate() {
 }
 
 // ===== 通话功能 =====
-let callTimer = null;
-let callSeconds = 0;
-let callConnectingTimeout = null;
-
-function startCall() {
-  const overlay = document.getElementById('callConnecting');
-  const statusText = document.getElementById('callStatusText');
-  const duration = document.getElementById('callDuration');
-
-  // 重置状态
-  overlay.style.display = 'flex';
-  statusText.innerHTML = '<span class="dot"></span>正在连接数字人…';
-  duration.textContent = '00:00';
-  callSeconds = 0;
-  if (callTimer) clearInterval(callTimer);
-  if (callConnectingTimeout) clearTimeout(callConnectingTimeout);
-
-  // 模拟连接过程（2秒后接通）
-  callConnectingTimeout = setTimeout(() => {
-    overlay.style.display = 'none';
-    statusText.innerHTML = '<span class="dot"></span>通话中';
-    startCallTimer();
-  }, 2000);
-}
-
-function startCallTimer() {
-  callTimer = setInterval(() => {
-    callSeconds++;
-    const m = String(Math.floor(callSeconds / 60)).padStart(2, '0');
-    const s = String(callSeconds % 60).padStart(2, '0');
-    document.getElementById('callDuration').textContent = `${m}:${s}`;
-  }, 1000);
-}
-
-function endCall() {
-  if (callTimer) { clearInterval(callTimer); callTimer = null; }
-  if (callConnectingTimeout) { clearTimeout(callConnectingTimeout); callConnectingTimeout = null; }
-  showToast('通话已结束');
-  setTimeout(() => navigate('library'), 500);
-}
-
-function toggleCallBtn(el, name) {
-  el.classList.toggle('active');
-  const isActive = el.classList.contains('active');
-  showToast(`${name}已${isActive ? '开启' : '关闭'}`);
-}
+// 通话逻辑已迁移至 js/trtc-call.js（腾讯云 TRTC 真实音视频）
 
 // ===== 充值套餐 =====
 function selectPackage(el) {
