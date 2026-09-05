@@ -22,6 +22,7 @@ function navigate(pageId) {
     // 页面特定逻辑
     if (pageId === 'call') trtcEnterCall();
     if (pageId === 'landing') generateStars();
+    if (pageId === 'library') renderMyCharacters();
   }
 }
 
@@ -110,6 +111,15 @@ function handleAuth() {
     btn.disabled = false;
     text.textContent = isLoginMode ? '登录' : '注册并登录';
     showToast(isLoginMode ? '登录成功' : '创建成功，数字人需要三到五分钟进行加载创建。');
+    // 记住账号密码（仅保存在本机浏览器）
+    try {
+      const remember = document.getElementById('authRemember').checked;
+      if (remember) {
+        localStorage.setItem('yn_auth_remember', JSON.stringify({ account: account, password: password }));
+      } else {
+        localStorage.removeItem('yn_auth_remember');
+      }
+    } catch (e) { /* 忽略存储异常 */ }
     setTimeout(() => navigate('library'), 800);
   }, 1200);
 }
@@ -212,6 +222,8 @@ function playVoicePreview(btnEl, voiceName) {
 }
 
 // ===== 照片真实选择与预览 =====
+let pendingPhotoThumb = null;   // 缩略图（用于本机保存角色）
+
 function handlePhotoSelect(input) {
   const file = input.files && input.files[0];
   if (!file) return;
@@ -235,6 +247,18 @@ function handlePhotoSelect(input) {
       '已选择：' + file.name + '<br>点击可重新选择';
     document.getElementById('photoUploadArea').classList.add('has-photo');
     showToast('照片已就绪 ✓');
+    // 生成小尺寸缩略图用于本地保存（localStorage 容量有限，不能存原图）
+    const thumb = new Image();
+    thumb.onload = () => {
+      const max = 320;
+      const scale = Math.min(1, max / Math.max(thumb.width, thumb.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(thumb.width * scale);
+      canvas.height = Math.round(thumb.height * scale);
+      canvas.getContext('2d').drawImage(thumb, 0, 0, canvas.width, canvas.height);
+      pendingPhotoThumb = canvas.toDataURL('image/jpeg', 0.72);
+    };
+    thumb.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -266,17 +290,98 @@ function handleAudioSelect(input) {
   showToast('音频已就绪，点击播放按钮试听 ✓');
 }
 
+// ===== 创建角色（保存到本机 localStorage） =====
+const CHAR_READY_AFTER_MS = 3 * 60 * 1000;  // 创建后 3 分钟变为"可通话"
+
 function submitCreate() {
   const consent = document.getElementById('consentPhoto').checked;
   if (!consent) {
     showToast('请先确认素材授权同意');
     return;
   }
-  showToast('正在创建数字人，请稍候…');
-  setTimeout(() => {
-    showToast('创建成功，数字人需要三到五分钟进行加载创建。');
-    setTimeout(() => navigate('library'), 1000);
-  }, 1500);
+  const name = (document.getElementById('createName').value || '').trim();
+  if (!name) {
+    showToast('请先在第 2 步填写角色姓名');
+    return;
+  }
+
+  const age = (document.getElementById('createAge').value || '').trim();
+  const relation = (document.getElementById('createRelation').value || '').trim();
+  // 当前选中的音色
+  let voice = '未选择';
+  const activeTab = document.querySelector('.voice-tab.active');
+  if (activeTab && activeTab.textContent.indexOf('克隆') > -1) {
+    voice = '克隆音色（' + ((document.getElementById('audioFileName').textContent || '已上传音频').replace('已选择：', '')).slice(0, 20) + '）';
+  } else {
+    const sel = document.querySelector('#voicePlatform .voice-option.selected .voice-option-name');
+    if (sel) voice = sel.textContent;
+  }
+
+  let characters = [];
+  try { characters = JSON.parse(localStorage.getItem('yn_characters') || '[]'); } catch (e) {}
+  characters.unshift({
+    id: Date.now(),
+    name: name,
+    age: age,
+    relation: relation,
+    voice: voice,
+    photo: pendingPhotoThumb || '',
+    createdAt: Date.now()
+  });
+  try {
+    localStorage.setItem('yn_characters', JSON.stringify(characters));
+  } catch (e) {
+    showToast('本机存储空间不足，角色未保存（照片过大）');
+    return;
+  }
+
+  showToast('创建成功，数字人需要三到五分钟进行加载创建。');
+  setTimeout(() => navigate('library'), 1000);
+}
+
+// ===== 创作库：渲染"我的角色" =====
+function renderMyCharacters() {
+  const section = document.getElementById('myCharactersSection');
+  const grid = document.getElementById('myCharactersGrid');
+  if (!section || !grid) return;
+
+  let characters = [];
+  try { characters = JSON.parse(localStorage.getItem('yn_characters') || '[]'); } catch (e) {}
+
+  if (!characters.length) {
+    section.classList.add('hidden');
+    grid.innerHTML = '';
+    return;
+  }
+
+  section.classList.remove('hidden');
+  grid.innerHTML = characters.map(c => {
+    const ready = Date.now() - c.createdAt >= CHAR_READY_AFTER_MS;
+    const badge = ready ? '可语音/视频' : '创建中…';
+    const avatar = c.photo
+      ? '<img src="' + c.photo + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">'
+      : '<div class="dh-avatar">' + (c.name || '角').slice(0, 1) + '</div>';
+    return '<div class="dh-card" onclick="navigate(\'call\')">' +
+      '<div class="dh-card-photo"><div class="dh-card-badge">' + badge + '</div>' + avatar + '</div>' +
+      '<div class="dh-card-info"><div class="dh-card-name">' + escapeHtml(c.name) + '</div>' +
+      '<div class="dh-card-relation">' + escapeHtml(c.relation || (c.age ? c.age + '岁' : '我的亲人')) + ' · ' + escapeHtml(c.voice) + '</div></div>' +
+      '<div class="dh-card-actions">' +
+      '<button onclick="event.stopPropagation();navigate(\'call\')">语音</button>' +
+      '<button onclick="event.stopPropagation();navigate(\'call\')">视频</button>' +
+      '</div></div>';
+  }).join('');
+
+  // 创建中的角色到时间后自动刷新状态
+  const earliestPending = characters
+    .filter(c => Date.now() - c.createdAt < CHAR_READY_AFTER_MS)
+    .sort((a, b) => (a.createdAt + CHAR_READY_AFTER_MS) - (b.createdAt + CHAR_READY_AFTER_MS))[0];
+  if (earliestPending) {
+    setTimeout(renderMyCharacters, earliestPending.createdAt + CHAR_READY_AFTER_MS - Date.now() + 1000);
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 }
 
 // ===== 通话功能 =====
@@ -331,4 +436,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (room && /^\d{8}$/.test(room)) {
     setTimeout(() => navigate('call'), 300);
   }
+})();
+
+// ===== 启动时：填充记住的账号密码并切到登录模式 =====
+(function initRememberedAuth() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('yn_auth_remember') || 'null');
+    if (saved && saved.account && saved.password) {
+      toggleAuthMode();  // 初始为注册模式，切一次变为登录模式
+      document.getElementById('authAccount').value = saved.account;
+      document.getElementById('authPassword').value = saved.password;
+      document.getElementById('authRemember').checked = true;
+    }
+  } catch (e) { /* 忽略 */ }
 })();

@@ -77,6 +77,10 @@
           <input class="auth-input" type="password" id="authConfirm" placeholder="请再次输入密码">
         </div>
         <div class="auth-consent">
+          <input type="checkbox" id="authRemember" checked>
+          <label for="authRemember">记住账号密码，下次自动填充</label>
+        </div>
+        <div class="auth-consent">
           <input type="checkbox" id="authAgree">
           <label for="authAgree">我已阅读并同意当前版本的 <a href="javascript:void(0)" onclick="navigate('agreement')">《用户协议》</a> 和 <a href="javascript:void(0)" onclick="navigate('privacy')">《隐私政策》</a></label>
         </div>
@@ -104,6 +108,10 @@
       <div class="library-header">
         <div class="library-title">亲人实时通话</div>
         <div class="library-subtitle">数字人需要三到五分钟进行加载创建，完成后即可发起语音或视频通话。</div>
+      </div>
+      <div id="myCharactersSection" class="hidden">
+        <div class="section-label"><span>我的角色</span><span class="label-action">创建于本机</span></div>
+        <div class="digital-humans-grid" id="myCharactersGrid"></div>
       </div>
       <div class="section-label"><span>平台示例</span><span class="label-action">AI 数字人</span></div>
       <div class="digital-humans-grid" id="digitalHumansGrid">
@@ -177,11 +185,11 @@
       <div class="create-section">
         <div class="create-section-title"><span class="num">2</span> 角色设定</div>
         <div class="create-section-desc">完善角色的人设与互动方式</div>
-        <div class="form-field"><label class="form-label">姓名</label><input class="form-input" type="text" placeholder="只填写角色名字，例如：瑶瑶的奶奶"></div>
-        <div class="form-field"><label class="form-label">年龄</label><input class="form-input" type="number" placeholder="大概年龄，例如：55"></div>
+        <div class="form-field"><label class="form-label">姓名</label><input class="form-input" type="text" id="createName" placeholder="只填写角色名字，例如：瑶瑶的奶奶"></div>
+        <div class="form-field"><label class="form-label">年龄</label><input class="form-input" type="number" id="createAge" placeholder="大概年龄，例如：55"></div>
         <div class="form-field"><label class="form-label">身份</label><input class="form-input" type="text" placeholder="例如：已故的亲人"></div>
         <div class="form-field"><label class="form-label">性格</label><input class="form-input" type="text" placeholder="用 2–3 个形容词描述，例如：勤劳，善良，喜欢聊天话多"></div>
-        <div class="form-field"><label class="form-label">与用户关系</label><textarea class="form-textarea" placeholder="说明关系、亲密度和彼此称呼，例如：我的外婆喜欢叫我瑶瑶"></textarea></div>
+        <div class="form-field"><label class="form-label">与用户关系</label><textarea class="form-textarea" id="createRelation" placeholder="说明关系、亲密度和彼此称呼，例如：我的外婆喜欢叫我瑶瑶"></textarea></div>
       </div>
       <div class="create-section">
         <div class="create-section-title"><span class="num">3</span> 音色</div>
@@ -595,8 +603,8 @@
 <!-- 腾讯云 TRTC Web SDK（官方国内 CDN，失败时回退 unpkg） -->
 <script src="https://trtc-1252463788.file.myqcloud.com/web/TRTCSDK/trtc-sdk-v5/latest/trtc.js"
         onerror="var s=document.createElement('script');s.src='https://unpkg.com/trtc-sdk-v5@latest/trtc.js';document.head.appendChild(s);"></script>
-<script src="./js/config.js?v=20260905e"></script>
-<script src="./js/app.js?v=20260905e"></script>
-<script src="./js/trtc-call.js?v=20260905e"></script>
+<script src="./js/config.js?v=20260905f"></script>
+<script src="./js/app.js?v=20260905f"></script>
+<script src="./js/trtc-call.js?v=20260905f"></script>
 </body>
 </html>
