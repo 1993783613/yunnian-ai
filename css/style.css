@@ -2295,3 +2295,116 @@ body {
   box-shadow: 0 4px 12px rgba(124, 106, 242, 0.35);
 }
 .lib-demo-chip svg { width: 12px; height: 12px; }
+
+/* ===== 20. 角色卡：删除按钮 + 记忆库按钮 ===== */
+.lib-role-card { position: relative; }
+.lib-role-del {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #F5F2FC;
+  color: #A8A1BE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.lib-role-del svg { width: 14px; height: 14px; }
+.lib-role-del:active { background: #EDE8FA; color: #F53F3F; transform: scale(0.92); }
+.lib-btn-mem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 9px 0;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--bg-accent, #F1EDFB);
+  color: var(--brand);
+  border: none;
+  transition: transform 0.12s;
+}
+.lib-btn-mem:active { transform: scale(0.96); }
+.lib-btn-mem svg { width: 16px; height: 16px; }
+
+/* ===== 21. 记忆库页面 ===== */
+.mem-page { padding: 14px 16px 40px; }
+.mem-char-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #FFFFFF;
+  border: 1px solid rgba(124, 106, 242, 0.18);
+  color: var(--brand);
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 7px 14px;
+  box-shadow: var(--shadow-card);
+}
+.mem-char-chip svg { width: 16px; height: 16px; }
+.mem-input-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
+  padding: 14px;
+  margin-top: 14px;
+}
+.mem-input-card textarea {
+  width: 100%;
+  border: none;
+  resize: none;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: transparent;
+  outline: none;
+}
+.mem-input-card textarea::placeholder { color: #B4AEC8; }
+.mem-save-btn { width: 100%; border-radius: 999px; margin-top: 6px; }
+.mem-tip {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding: 10px 4px 2px;
+}
+.mem-list { margin-top: 10px; }
+.mem-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 40px 20px;
+  line-height: 1.9;
+}
+.mem-empty span { font-size: 12px; color: var(--text-muted); }
+.mem-item {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.mem-item-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.mem-src {
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.mem-src.hand { background: var(--bg-accent, #F1EDFB); color: var(--brand); }
+.mem-src.auto { background: #EEF4F0; color: #3B9C6A; }
+.mem-time { font-size: 11px; color: var(--text-muted); }
+.mem-text { font-size: 14px; color: var(--text-primary); line-height: 1.6; padding-right: 8px; word-break: break-word; }
+.mem-del {
+  font-size: 12px;
+  color: #B4AEC8;
+  padding: 4px 2px;
+  margin-top: 4px;
+  cursor: pointer;
+}
+.mem-del:active { color: #F53F3F; }

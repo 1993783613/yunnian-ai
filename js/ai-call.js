@@ -280,6 +280,8 @@ function aiCallConnect() {
 
 // ===== AI 说话（真实模式=云驱动口型；演示模式=本地语音合成） =====
 function aiSpeak(text) {
+  // 通话里 TA 说的话自动写入记忆库
+  if (aiCallState === 'connected' && aiCallChar) memAdd(aiCallChar.id, text, 'ai');
   if (aiCallReal) return ivhSpeak(text);
   const sub = document.getElementById('aicSubtitle');
   sub.textContent = text;
@@ -307,10 +309,41 @@ function aiSpeak(text) {
   aiSpeak._t = setTimeout(() => { sub.style.display = 'none'; }, 8000);
 }
 
-// ===== AI 回复引擎（规则版，正式版替换为大模型 API） =====
+// ===== 记忆召回工具 =====
+function aiClip(s, n) {
+  s = String(s).replace(/\s+/g, '');
+  return s.length > n ? s.slice(0, n) + '…' : s;
+}
+
+const MEM_STOP = ['我的', '你的', '我们', '你们', '就是', '不是', '一下', '什么', '怎么', '这样', '那样', '可以', '这个', '那个', '你好', '谢谢', '时候', '知道', '觉得', '现在', '最近', '还是', '没有', '了吗', '呢？'];
+
+// 从用户输入里找相关旧记忆（两字词重叠匹配，够演示级召回）
+function memMatch(text, mems) {
+  const t = String(text).replace(/[，。！？、,.!?\s]/g, '');
+  if (t.length < 2 || !mems || !mems.length) return null;
+  for (const m of mems) {
+    const s = String(m.text).replace(/\s+/g, '');
+    if (s === t) continue;
+    for (let i = 0; i + 2 <= t.length; i++) {
+      const bg = t.slice(i, i + 2);
+      if (MEM_STOP.indexOf(bg) > -1) continue;
+      if (s.indexOf(bg) > -1) return m;
+    }
+  }
+  return null;
+}
+
+// ===== AI 回复引擎（规则版 + 记忆库召回，正式版替换为大模型 API） =====
 function aiGreeting(char) {
+  const rel = char.relation ? char.relation.replace(/^我的/, '') : '好孩子';
+  // 记忆库里有内容时，主动提起上次聊过的话题
+  const mems = memGetAll(char.id).filter(m => m.source !== 'ai');
+  if (mems.length && Math.random() < 0.6) {
+    const m = mems[Math.floor(Math.random() * Math.min(3, mems.length))];
+    return '哎，' + rel + '来啦，' + (char.name || '') + '在呢。上次你跟我说「' + aiClip(m.text, 18) + '」，我一直记着呢，后来怎么样了？';
+  }
   const pool = [
-    '哎，' + (char.relation ? char.relation.replace(/^我的/, '') : '好孩子') + '，' + (char.name || '') + '在呢，好久没听到你的声音了，最近过得好不好？',
+    '哎，' + rel + '，' + (char.name || '') + '在呢，好久没听到你的声音了，最近过得好不好？',
     '来啦，我正念叨你呢，吃饭了没有啊？',
     '是你啊，我可太想你了，最近忙什么呢？'
   ];
@@ -321,6 +354,18 @@ function aiReply(text) {
   const t = (text || '').trim();
   const rel = aiCallChar.relation ? aiCallChar.relation.replace(/^我的/, '') : '孩子';
   const who = aiCallChar.name || '';
+
+  // ① 先查记忆库：用户提到和旧记忆相关的事 → 召回并追问
+  const hit = memMatch(t, memGetAll(aiCallChar.id).filter(m => m.source !== 'ai'));
+  if (hit) {
+    const R0 = [
+      '这个我记得！你之前跟我讲过「' + aiClip(hit.text, 20) + '」，' + who + '一直放在心里呢，后来怎么样了？',
+      '哎，你一提我就想起来了，你说过「' + aiClip(hit.text, 20) + '」，现在是什么情况啦？',
+      '我记得记得，「' + aiClip(hit.text, 20) + '」嘛，' + who + '记性可好了。你接着跟我说说。'
+    ];
+    return R0[Math.floor(Math.random() * R0.length)];
+  }
+
   const R = [
     [/想你|想念|思念|挂念/, ['哎，' + rel + '，我也天天想你，你好好上班，别惦记我，我身体硬朗着呢。', '我也想你啊，夜里翻来覆去都是你小时候的样子。']],
     [/吃了吗|吃饭|吃东西|饿/, ['刚吃过，锅里还给你留着呢，你到时候回来热一热就能吃。你也要按时吃饭，别老点外卖。']],
@@ -383,6 +428,8 @@ function aiStopRecognition() {
 }
 
 function aiShowUserBubble(text) {
+  // 用户说过的话自动写入记忆库（TA 就记住了你聊过的话题）
+  if (aiCallChar) memAdd(aiCallChar.id, text, 'chat');
   const box = document.getElementById('aicUserBubble');
   box.textContent = '我：' + text;
   box.style.display = 'block';

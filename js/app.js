@@ -362,6 +362,9 @@ function renderMyCharacters() {
       ? '<img src="' + c.photo + '" alt="">'
       : '<span class="lib-role-emoji">👨‍👩‍👧</span>';
     return '<div class="lib-role-card" data-char-id="' + c.id + '" onclick="aiCallConfirm(\'' + c.id + '\',\'video\')">' +
+      '<button class="lib-role-del" onclick="deleteCharacter(\'' + c.id + '\', event)" aria-label="删除角色">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>' +
+      '</button>' +
       '<div class="lib-role-left">' +
         '<div class="lib-role-photo">' + badge + photo + '</div>' +
         '<div class="lib-role-name">' + escapeHtml(c.name) + '</div>' +
@@ -372,6 +375,8 @@ function renderMyCharacters() {
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>语音</button>' +
         '<button class="lib-btn-ghost" onclick="event.stopPropagation();aiCallConfirm(\'' + c.id + '\',\'video\')">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>视频</button>' +
+        '<button class="lib-btn-mem" onclick="event.stopPropagation();openMemory(\'' + c.id + '\')">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a5 5 0 0 0-5 5c0 1.1.4 2.1 1 2.9C6.8 11.7 6 13 6 14.5A5.5 5.5 0 0 0 11.5 20h1A5.5 5.5 0 0 0 18 14.5c0-1.5-.8-2.8-2-3.6.6-.8 1-1.8 1-2.9a5 5 0 0 0-5-5z"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="9.5" y1="11.5" x2="14.5" y2="11.5"/></svg>记忆库</button>' +
       '</div></div>';
   }).join('');
 
@@ -382,6 +387,93 @@ function renderMyCharacters() {
   if (earliestPending) {
     setTimeout(renderMyCharacters, earliestPending.createdAt + CHAR_READY_AFTER_MS - Date.now() + 1000);
   }
+}
+
+// ===== 删除角色 =====
+function deleteCharacter(id, event) {
+  if (event) event.stopPropagation();
+  let chars = [];
+  try { chars = JSON.parse(localStorage.getItem('yn_characters') || '[]'); } catch (e) {}
+  const c = chars.find(x => String(x.id) === String(id));
+  if (!c) return;
+  if (!confirm('确定删除角色「' + (c.name || '') + '」吗？\n\n删除后 TA 的记忆库内容也将一并清除，无法恢复。')) return;
+  try {
+    localStorage.setItem('yn_characters', JSON.stringify(chars.filter(x => String(x.id) !== String(id))));
+    localStorage.removeItem('yn_memory_' + id);
+  } catch (e) { showToast('删除失败，请重试'); return; }
+  showToast('角色已删除');
+  renderMyCharacters();
+}
+
+// ===== 记忆库（每个角色独立一份，手写录入 + 通话聊天自动记录） =====
+function memKey(id) { return 'yn_memory_' + id; }
+
+function memGetAll(id) {
+  if (!id) return [];
+  try { return JSON.parse(localStorage.getItem(memKey(id)) || '[]'); } catch (e) { return []; }
+}
+
+function memAdd(id, text, source) {
+  if (!id || !text) return;
+  text = String(text).trim();
+  if (!text) return;
+  const list = memGetAll(id);
+  // 去重：同内容同来源不重复记
+  if (list.some(m => m.text === text && m.source === (source || 'chat'))) return;
+  list.unshift({ text: text, source: source || 'chat', time: Date.now() });
+  try { localStorage.setItem(memKey(id), JSON.stringify(list.slice(0, 200))); } catch (e) {}
+}
+
+// 记忆库页面 =====
+let memCharId = '';
+
+function openMemory(id) {
+  const c = aiFindChar(id);
+  if (!c) { showToast('角色不存在'); return; }
+  memCharId = String(id);
+  const nameEl = document.getElementById('memCharName');
+  if (nameEl) nameEl.textContent = c.name + ' 的记忆库';
+  const ta = document.getElementById('memInputText');
+  if (ta) ta.value = '';
+  navigate('memory');
+  memRender();
+}
+
+function memRender() {
+  const listEl = document.getElementById('memList');
+  if (!listEl || !memCharId) return;
+  const list = memGetAll(memCharId);
+  if (!list.length) {
+    listEl.innerHTML = '<div class="mem-empty">还没有记忆内容<br><span>写下想让 TA 记住的事，或直接和 TA 视频聊天——聊天内容会自动记到这里，下次通话 TA 都想得起来</span></div>';
+    return;
+  }
+  listEl.innerHTML = list.map(m => {
+    const d = new Date(m.time);
+    const ts = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const src = m.source === 'hand' ? '手写' : (m.source === 'ai' ? 'TA 说的' : '聊天记录');
+    return '<div class="mem-item">' +
+      '<div class="mem-item-top"><span class="mem-src ' + (m.source === 'hand' ? 'hand' : 'auto') + '">' + src + '</span><span class="mem-time">' + ts + '</span></div>' +
+      '<div class="mem-text">' + escapeHtml(m.text) + '</div>' +
+      '<button class="mem-del" onclick="memDelete(' + m.time + ')">删除</button>' +
+    '</div>';
+  }).join('');
+}
+
+function memSave() {
+  const ta = document.getElementById('memInputText');
+  if (!ta) return;
+  const text = (ta.value || '').trim();
+  if (!text) { showToast('先写点什么吧'); return; }
+  memAdd(memCharId, text, 'hand');
+  ta.value = '';
+  showToast('已存入记忆库，TA 记住啦');
+  memRender();
+}
+
+function memDelete(time) {
+  const list = memGetAll(memCharId).filter(m => m.time !== time);
+  try { localStorage.setItem(memKey(memCharId), JSON.stringify(list)); } catch (e) {}
+  memRender();
 }
 
 function escapeHtml(s) {

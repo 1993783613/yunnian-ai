@@ -9,7 +9,7 @@
   <meta name="keywords" content="超级念,AI数字人,实时通话,语音通话,视频通话,音色克隆,数字人创建,视频商城" data-page-node-id="gyZOocPQXlLwkDcsXjxqAR">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%237C6AF2'/%3E%3Cstop offset='100%25' stop-color='%235A48D6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='38' fill='url(%23g)'/%3E%3Ctext x='50' y='64' font-size='44' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3E%E5%BF%B5%3C/text%3E%3C/svg%3E" data-page-node-id="Ki9tISPeEILzCFiQcLUOQE">
   <title>超级念</title>
-  <link rel="stylesheet" href="./css/style.css?v=20260906e" data-page-node-id="TiK9KJdu7FkTLHAlzTdBUs">
+  <link rel="stylesheet" href="./css/style.css?v=20260906f" data-page-node-id="TiK9KJdu7FkTLHAlzTdBUs">
 </head>
 <body data-page-node-id="aoiH7Yz4btrgRcOZRnTB8t">
 
@@ -200,6 +200,31 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="NeVMOLT23UAT6EuyUmEQGV"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" data-page-node-id="GnwFqGkAsqoGt3r919qFNB"/><circle cx="12" cy="7" r="4" data-page-node-id="St6AcGXWnePtVWOmRVn5Fn"/></svg>
         <span data-page-node-id="urOUxCcPyma8kx7CwISQ3G">我的</span>
       </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 3.6: 记忆库 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-memory">
+    <div class="topbar">
+      <button class="topbar-back" onclick="navigate('library')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>返回
+      </button>
+      <div class="topbar-title">记忆库</div>
+      <span style="width:52px"></span>
+    </div>
+    <div class="page-content mem-page">
+      <div class="mem-char-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a5 5 0 0 0-5 5c0 1.1.4 2.1 1 2.9C6.8 11.7 6 13 6 14.5A5.5 5.5 0 0 0 11.5 20h1A5.5 5.5 0 0 0 18 14.5c0-1.5-.8-2.8-2-3.6.6-.8 1-1.8 1-2.9a5 5 0 0 0-5-5z"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="9.5" y1="11.5" x2="14.5" y2="11.5"/></svg>
+        <span id="memCharName">记忆库</span>
+      </div>
+      <div class="mem-input-card">
+        <textarea id="memInputText" rows="3" placeholder="写点想让 TA 记住的事…&#10;比如：我下个月回家看你 / 我最近在学做饭"></textarea>
+        <button class="btn btn-primary mem-save-btn" onclick="memSave()">存入记忆</button>
+      </div>
+      <div class="mem-tip">TA 会记住这里的内容。视频聊天时提到相关话题，TA 都能想起来；聊过天没删除的内容也会自动记到这里。</div>
+      <div class="mem-list" id="memList"></div>
     </div>
   </div>
 
@@ -844,8 +869,8 @@
 <script src="https://trtc-1252463788.file.myqcloud.com/web/TRTCSDK/trtc-sdk-v5/latest/trtc.js"
         onerror="var s=document.createElement('script');s.src='https://unpkg.com/trtc-sdk-v5@latest/trtc.js';document.head.appendChild(s);"></script>
 <script src="./js/config.js?v=20260906b"></script>
-<script src="./js/app.js?v=20260906d"></script>
+<script src="./js/app.js?v=20260906f"></script>
 <script src="./js/trtc-call.js?v=20260906b"></script>
-<script src="./js/ai-call.js?v=20260906b"></script>
+<script src="./js/ai-call.js?v=20260906f"></script>
 </body>
 </html>
