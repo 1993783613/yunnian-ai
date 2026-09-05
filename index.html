@@ -293,6 +293,13 @@
           <button class="btn-primary lobby-btn" onclick="trtcJoinByRoomId()">加入通话</button>
         </div>
 
+        <!-- 访客加入面板：从分享链接进入时显示 -->
+        <div id="guestJoinBox" class="invite-panel" style="display:none">
+          <div class="invite-room-no">邀请你进入通话 <span id="guestRoomNo">—</span></div>
+          <div class="invite-tip">对方正在等你，点击下方按钮加入（将使用你的摄像头和麦克风）</div>
+          <button class="btn-primary lobby-btn" onclick="trtcJoinAsGuest()">加入通话</button>
+        </div>
+
         <!-- 邀请面板：创建房间成功后显示 -->
         <div id="invitePanel" class="invite-panel" style="display:none">
           <div class="invite-room-no">房间号 <span id="inviteRoomNo">—</span></div>
@@ -316,6 +323,7 @@
             <div class="call-status-text" id="callStatusText"><span class="dot"></span>等待对方加入…</div>
           </div>
           <div class="call-local-preview" id="callLocalContainer"></div>
+          <div class="call-debug-log" id="callDebugLog"></div>
           <div class="call-connecting-overlay" id="callConnecting" style="display:none">
             <div class="connecting-spinner"></div>
             <div class="connecting-text" id="callConnectingText">正在进入通话房间…</div>
@@ -587,8 +595,8 @@
 <!-- 腾讯云 TRTC Web SDK（官方国内 CDN，失败时回退 unpkg） -->
 <script src="https://trtc-1252463788.file.myqcloud.com/web/TRTCSDK/trtc-sdk-v5/latest/trtc.js"
         onerror="var s=document.createElement('script');s.src='https://unpkg.com/trtc-sdk-v5@latest/trtc.js';document.head.appendChild(s);"></script>
-<script src="./js/config.js?v=20260905c"></script>
-<script src="./js/app.js?v=20260905c"></script>
-<script src="./js/trtc-call.js?v=20260905c"></script>
+<script src="./js/config.js?v=20260905d"></script>
+<script src="./js/app.js?v=20260905d"></script>
+<script src="./js/trtc-call.js?v=20260905d"></script>
 </body>
 </html>

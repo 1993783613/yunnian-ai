@@ -322,3 +322,12 @@ document.addEventListener('DOMContentLoaded', () => {
     lastTouch = now;
   }, { passive: false });
 });
+
+// ===== 从分享链接进入：自动跳转到通话页 =====
+(function () {
+  const params = new URLSearchParams(location.search);
+  const room = params.get('room');
+  if (room && /^\d{8}$/.test(room)) {
+    setTimeout(() => navigate('call'), 300);
+  }
+})();
