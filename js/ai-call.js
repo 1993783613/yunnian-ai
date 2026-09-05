@@ -501,3 +501,24 @@ window.addEventListener('beforeunload', () => {
   aiStopRecognition();
   if ('speechSynthesis' in window) speechSynthesis.cancel();
 });
+
+// ===== 扬声器开关（微信式：静音/取消静音远端音频） =====
+let aiSpeakerOn = true;
+async function aiToggleSpeaker() {
+  aiSpeakerOn = !aiSpeakerOn;
+  document.querySelectorAll('#aiCallScreen video, #aiCallScreen audio').forEach(v => { v.muted = !aiSpeakerOn; });
+  const lbl = document.getElementById('spkCtlLabel');
+  if (lbl) lbl.textContent = aiSpeakerOn ? '扬声器已开' : '扬声器已关';
+  const btn = document.getElementById('spkCtlBtn');
+  if (btn) btn.classList.toggle('off', !aiSpeakerOn);
+  showToast(aiSpeakerOn ? '扬声器已开启' : '扬声器已关闭');
+}
+
+// ===== 小窗切换（放大/还原自己画面） =====
+let aiPipLarge = false;
+function aiTogglePip() {
+  aiPipLarge = !aiPipLarge;
+  const pip = document.querySelector('#aiCallScreen .aic-pip');
+  if (pip) pip.classList.toggle('large', aiPipLarge);
+  showToast(aiPipLarge ? '已放大自己的画面' : '已还原小窗');
+}

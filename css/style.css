@@ -1619,3 +1619,495 @@ ul { list-style: none; }
   text-shadow: 0 1px 2px rgba(0,0,0,0.8);
   pointer-events: none;
 }
+
+/* ============================================================
+   超级念 · 紫色主题（v2 换肤层）
+   设计定稿：浅紫渐变底 #F1EDFB + 主紫 #7C6AF2 + 白色大圆角卡片
+   通话页保持深色（微信视频风格）
+   ============================================================ */
+
+/* ===== 1. 变量整体翻转 ===== */
+:root {
+  /* 背景色系：浅紫 */
+  --bg-darkest: #F1EDFB;
+  --bg-dark: #F1EDFB;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FBFAFF;
+  --bg-elevated: #FFFFFF;
+  --bg-border: #ECE8F8;
+  --bg-accent: #EFEAFE;
+
+  /* 品牌紫 */
+  --brand: #7C6AF2;
+  --brand-dim: #5A48D6;
+  --brand-glow: rgba(124, 106, 242, 0.15);
+  --brand-glow-strong: rgba(124, 106, 242, 0.3);
+
+  /* 文字：深色 */
+  --text-primary: #1F1B2E;
+  --text-secondary: #3A3550;
+  --text-tertiary: #6E688C;
+  --text-muted: #9A94B5;
+  --text-warm: #1F1B2E;
+
+  /* 阴影：柔和紫晕 */
+  --shadow-card: 0 8px 28px rgba(124, 106, 242, 0.10);
+  --shadow-brand: 0 0 24px var(--brand-glow);
+}
+
+/* ===== 2. 全局底色 ===== */
+body {
+  background: linear-gradient(160deg, #F5F1FC 0%, #EDE7F9 55%, #E7DFF8 100%);
+  color: var(--text-primary);
+}
+.phone-shell {
+  background: linear-gradient(160deg, #F5F1FC 0%, #EDE7F9 55%, #E7DFF8 100%);
+  box-shadow: 0 20px 60px rgba(124, 106, 242, 0.18);
+}
+@media (min-width: 768px) {
+  body { background: linear-gradient(160deg, #EFE9FA 0%, #E2D9F6 100%); }
+  .phone-shell { border: 8px solid #FFFFFF; box-shadow: 0 24px 70px rgba(124, 106, 242, 0.22); }
+}
+
+/* ===== 3. 顶部导航栏 ===== */
+.topbar {
+  background: rgba(245, 241, 252, 0.88);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(124, 106, 242, 0.08);
+}
+.topbar-title { color: var(--text-primary); font-weight: 700; }
+.topbar-back { color: var(--text-tertiary); }
+.topbar-action { color: var(--brand); font-weight: 600; }
+
+/* ===== 4. 悬浮胶囊底部导航（参考用户截图样式） ===== */
+.tabbar {
+  position: sticky;
+  bottom: 0;
+  z-index: 90;
+  margin: 8px 14px max(12px, env(safe-area-inset-bottom));
+  padding: 10px 6px calc(10px - 2px);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(124, 106, 242, 0.10);
+  border-radius: 24px;
+  box-shadow: 0 10px 32px rgba(124, 106, 242, 0.16);
+}
+.tabbar::before { display: none; }
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 0 2px;
+  color: #9A94B5;
+  font-size: 11px;
+  border-radius: 16px;
+  transition: color 0.2s;
+}
+.tab-item svg { width: 23px; height: 23px; }
+.tab-item.active { color: var(--brand); font-weight: 600; }
+.tab-item.active svg { stroke-width: 2.4; }
+
+/* ===== 5. 按钮 ===== */
+.btn-primary {
+  background: linear-gradient(135deg, #8B7CF6 0%, #7C6AF2 55%, #6A55E8 100%);
+  color: #FFFFFF;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(124, 106, 242, 0.32);
+  border-radius: 14px;
+}
+.btn-primary:active { background: var(--brand-dim); }
+.btn-secondary {
+  background: #FFFFFF;
+  color: var(--text-primary);
+  border: 1px solid var(--bg-border);
+}
+.btn-ghost {
+  background: #FFFFFF;
+  color: var(--brand);
+  border: 1px solid rgba(124, 106, 242, 0.45);
+  border-radius: 14px;
+}
+.btn-danger {
+  background: rgba(255, 57, 70, 0.08);
+  color: var(--color-danger);
+  border: 1px solid rgba(255, 57, 70, 0.25);
+  border-radius: 14px;
+}
+
+/* ===== 6. 首页（未登录）：紫色光晕 + 隐藏星空 ===== */
+.landing {
+  background: radial-gradient(ellipse at 50% 22%, rgba(139, 124, 246, 0.16) 0%, transparent 55%),
+              radial-gradient(ellipse at 50% 85%, rgba(124, 106, 242, 0.10) 0%, transparent 55%),
+              linear-gradient(160deg, #F5F1FC 0%, #E7DFF8 100%);
+}
+.landing-stars { display: none; }
+.landing-title {
+  color: var(--text-primary);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+.landing-subtitle { color: var(--text-tertiary); }
+.landing-heading { color: var(--text-primary); }
+.landing-desc { color: var(--text-tertiary); }
+.landing-footer { color: var(--text-muted); }
+
+/* ===== 7. 通用卡片/表单微调 ===== */
+.auth-input, .form-input, .form-textarea {
+  background: #FFFFFF;
+  border: 1px solid var(--bg-border);
+  color: var(--text-primary);
+  border-radius: 14px;
+}
+.auth-input:focus, .form-input:focus, .form-textarea:focus {
+  border-color: rgba(124, 106, 242, 0.55);
+  box-shadow: 0 0 0 3px rgba(124, 106, 242, 0.12);
+  outline: none;
+}
+.auth-title { color: var(--text-primary); }
+.auth-subtitle { color: var(--text-tertiary); }
+.auth-label { color: var(--text-secondary); }
+.auth-switch a { color: var(--brand); }
+.auth-error { color: var(--color-danger); }
+
+.upload-area {
+  background: rgba(124, 106, 242, 0.05);
+  border: 1.5px dashed rgba(124, 106, 242, 0.45);
+  border-radius: 18px;
+  color: var(--brand);
+}
+.upload-hint { color: var(--text-tertiary); }
+
+.voice-tab { color: var(--text-muted); background: transparent; border: 1px solid var(--bg-border); border-radius: 999px; }
+.voice-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.voice-cat-tab { background: #FFFFFF; border: 1px solid var(--bg-border); color: var(--text-secondary); border-radius: 999px; }
+.voice-cat-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.voice-option {
+  background: #FFFFFF;
+  border: 1px solid var(--bg-border);
+  border-radius: 16px;
+}
+.voice-option.selected { border-color: var(--brand); box-shadow: 0 4px 16px rgba(124, 106, 242, 0.14); }
+.voice-option-name { color: var(--text-primary); }
+.voice-option-desc { color: var(--text-muted); }
+.voice-option-play { color: var(--brand); }
+.voice-option-play.playing { color: var(--brand); }
+.voice-group-label { color: var(--text-tertiary); }
+
+.consent-box { background: #FFFFFF; border: 1px solid var(--bg-border); border-radius: 16px; }
+.consent-box-title { color: var(--brand); }
+.consent-box-text { color: var(--text-tertiary); }
+.create-section-title { color: var(--text-primary); }
+.create-section-title .num { background: var(--brand); color: #fff; }
+.create-section-desc { color: var(--text-muted); }
+
+/* ===== 8. 创作平台：紫色渐变横幅（新） ===== */
+.library-hero { padding: 4px 16px 8px; }
+.library-hero-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #9B8CF8 0%, #7C6AF2 55%, #6A55E8 100%);
+  border-radius: 22px;
+  padding: 22px 20px;
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(124, 106, 242, 0.30);
+}
+.library-hero-title { font-size: 26px; font-weight: 800; letter-spacing: 1px; }
+.library-hero-sub { font-size: 13px; opacity: 0.88; margin-top: 2px; }
+.library-hero-clock {
+  position: absolute;
+  right: 18px; top: 50%;
+  transform: translateY(-50%);
+  width: 58px; height: 58px;
+  opacity: 0.5;
+  color: #fff;
+}
+.library-header { padding: 12px 16px 2px; }
+.library-title { color: var(--text-primary); font-weight: 700; }
+.library-subtitle { color: var(--text-muted); }
+
+/* ===== 9. 角色卡片 ===== */
+.dh-card {
+  background: #FFFFFF;
+  border: 1px solid var(--bg-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
+}
+.dh-card-name { color: var(--text-primary); }
+.dh-card-relation { color: var(--text-muted); }
+.dh-card-badge {
+  background: rgba(124, 106, 242, 0.9);
+  color: #fff;
+}
+.dh-card-actions button {
+  background: #FFFFFF;
+  border: 1px solid rgba(124, 106, 242, 0.55);
+  color: var(--brand);
+  border-radius: 999px;
+  font-weight: 600;
+}
+.dh-card-actions button:first-child {
+  background: linear-gradient(135deg, #8B7CF6, #7C6AF2);
+  border-color: transparent;
+  color: #fff;
+}
+.dh-avatar { background: linear-gradient(135deg, #8B7CF6, #6A55E8); color: #fff; }
+.create-card {
+  border: 1.5px dashed rgba(124, 106, 242, 0.5);
+  background: rgba(124, 106, 242, 0.04);
+  color: var(--brand);
+  border-radius: 20px;
+}
+.section-label { color: var(--text-secondary); font-weight: 600; }
+.section-label .label-action { color: var(--text-muted); font-weight: 400; }
+
+/* ===== 10. 商城（新） ===== */
+.shop-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 14px 16px 4px;
+}
+.shop-card {
+  background: #FFFFFF;
+  border: 1px solid var(--bg-border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.shop-card:active { transform: scale(0.97); }
+.shop-thumb {
+  position: relative;
+  aspect-ratio: 16 / 10.5;
+  background: linear-gradient(140deg, #C9BFF9 0%, #A898F5 55%, #8B7CF6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.shop-play {
+  position: absolute;
+  width: 44px; height: 44px;
+  padding: 10px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  backdrop-filter: blur(4px);
+  z-index: 2;
+}
+.shop-thumb-emoji { font-size: 34px; opacity: 0.9; }
+.shop-info { padding: 10px 12px 12px; }
+.shop-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.shop-meta { display: flex; align-items: baseline; justify-content: space-between; margin-top: 4px; }
+.shop-price { color: var(--brand); font-weight: 800; font-size: 16px; }
+.shop-sold { color: var(--text-muted); font-size: 11px; }
+
+/* ===== 11. 消息页：紫色图标块 ===== */
+.message-item {
+  background: #FFFFFF;
+  border: 1px solid transparent;
+  border-radius: 0;
+}
+.message-item:active { background: #FBFAFF; }
+.message-list {
+  background: #FFFFFF;
+  border-radius: 20px;
+  border: 1px solid var(--bg-border);
+  box-shadow: var(--shadow-card);
+  margin: 8px 16px;
+  padding: 4px 14px;
+}
+.message-item { border-bottom: 1px solid #F3F0FB; }
+.message-item:last-child { border-bottom: none; }
+.message-title { color: var(--text-primary); font-weight: 600; }
+.message-preview { color: var(--text-muted); }
+.message-time { color: var(--text-muted); font-weight: 400; }
+.message-icon {
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.message-icon.system { background: linear-gradient(135deg, #8B7CF6, #6A55E8); color: #fff; }
+.message-icon.notice { background: var(--bg-accent); color: var(--brand); }
+.message-icon.business { background: var(--bg-accent); color: var(--brand); }
+.message-badge { background: #F53F3F; }
+
+/* ===== 12. 我的：紧凑个人卡 + 菜单 + 紫色退出 ===== */
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--bg-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
+  padding: 14px 14px;
+  margin: 8px 16px 14px;
+}
+.profile-card .profile-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8B7CF6, #6A55E8);
+  color: #fff;
+  font-size: 20px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.profile-card .profile-info { flex: 1; min-width: 0; }
+.profile-card .profile-name { color: var(--text-primary); font-weight: 700; font-size: 16px; }
+.profile-card .profile-meta { color: var(--text-muted); font-size: 12px; }
+.profile-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.profile-balance-chip {
+  background: var(--bg-accent);
+  color: var(--brand);
+  font-size: 12px; font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.profile-recharge-btn {
+  background: #FFFFFF;
+  border: 1px solid rgba(124, 106, 242, 0.55);
+  color: var(--brand);
+  font-size: 12px; font-weight: 600;
+  padding: 4px 14px;
+  border-radius: 999px;
+}
+.menu-list { padding: 0 16px; }
+.menu-list .menu-item {
+  background: transparent;
+}
+.menu-item { color: var(--text-primary); }
+.menu-text { color: var(--text-primary); font-weight: 500; }
+.menu-icon { color: var(--brand); background: var(--bg-accent); border-radius: 10px; }
+.logout-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--brand);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 18px 0 6px;
+  cursor: pointer;
+}
+.logout-row svg { width: 18px; height: 18px; }
+.logout-row:active { opacity: 0.7; }
+
+/* ===== 13. 充值页 ===== */
+.balance-card {
+  background: linear-gradient(135deg, #9B8CF8 0%, #7C6AF2 55%, #6A55E8 100%);
+  border-radius: 20px;
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(124, 106, 242, 0.30);
+}
+.balance-card-label { color: rgba(255,255,255,0.85); }
+.balance-card-unit { color: rgba(255,255,255,0.85); }
+.package-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--bg-border);
+  border-radius: 18px;
+}
+.package-card.selected { border-color: var(--brand); box-shadow: 0 6px 20px rgba(124, 106, 242, 0.18); }
+.package-name { color: var(--text-primary); }
+.package-desc { color: var(--text-muted); }
+.package-price .price { color: var(--brand); }
+.package-price .period { color: var(--text-muted); }
+.package-tag { background: var(--brand); color: #fff; }
+
+/* ===== 14. 设置/协议/隐私页 ===== */
+.privacy-card { background: #FFFFFF; border: 1px solid var(--bg-border); border-radius: 18px; }
+.privacy-card-title { color: var(--text-primary); }
+.privacy-card-desc { color: var(--text-muted); }
+.toggle-label .title { color: var(--text-primary); }
+.toggle-label .desc { color: var(--text-muted); }
+.text-danger { color: var(--color-danger); }
+
+/* ===== 15. Toast ===== */
+.toast {
+  background: rgba(31, 27, 46, 0.92);
+  color: #fff;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(31, 27, 46, 0.25);
+}
+
+/* ===== 16. 通话大厅：浅色化（通话中界面保持深色） ===== */
+.call-page { background: linear-gradient(160deg, #F5F1FC 0%, #E7DFF8 100%); }
+.call-lobby { color: var(--text-primary); }
+.lobby-icon { background: rgba(124, 106, 242, 0.12); color: var(--brand); }
+.lobby-title { color: var(--text-primary); }
+.lobby-desc { color: var(--text-muted); }
+.lobby-input {
+  background: #FFFFFF;
+  border: 1px solid var(--bg-border);
+  color: var(--text-primary);
+}
+.lobby-input:focus { border-color: rgba(124, 106, 242, 0.55); }
+.invite-panel {
+  background: #FFFFFF;
+  border: 1px solid rgba(124, 106, 242, 0.35);
+  box-shadow: var(--shadow-card);
+}
+.invite-room-no { color: var(--text-secondary); }
+.invite-room-no span { color: var(--brand); }
+.invite-tip { color: var(--text-muted); }
+.invite-link { color: var(--brand); background: rgba(124, 106, 242, 0.08); }
+
+/* 通话中界面：保持深色沉浸（微信视频风） */
+.call-active {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #0a1a2e 0%, #050913 100%);
+  z-index: 10;
+}
+.call-info-top .call-name { color: #fff; }
+.call-duration { color: #fff; }
+.call-avatar-large { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+.call-status-text { color: rgba(255,255,255,0.75); }
+.call-btn { background: rgba(60,60,60,0.55); color: #fff; border-radius: 50%; }
+.call-btn.active { background: rgba(60,60,60,0.55); }
+.call-btn-label { color: rgba(255,255,255,0.85); }
+.call-connecting-overlay { background: rgba(5, 9, 19, 0.8); }
+.connecting-text { color: rgba(255,255,255,0.75); }
+
+/* ===== 17. AI 通话界面：微信式白色圆钮 ===== */
+.aic-ctl-circle {
+  background: #FFFFFF;
+  color: #1a1a1a;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  border: none;
+}
+.aic-ctl.off .aic-ctl-circle { background: rgba(255, 255, 255, 0.85); color: #555; }
+.aic-ctl-label { color: rgba(255, 255, 255, 0.92); font-size: 12px; }
+.aic-ctls { gap: 40px; }
+.aic-ctls-sub { gap: 52px; margin-top: -4px; align-items: center; }
+.aic-ctl-mini {
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  cursor: pointer;
+}
+.aic-ctl-mini svg { width: 20px; height: 20px; }
+.aic-ctl-mini:active { background: rgba(255,255,255,0.15); }
+.aic-bottom { gap: 22px; bottom: 46px; }
+.aic-hangup { box-shadow: 0 8px 24px rgba(227, 77, 77, 0.45); }
+.aic-statusbar { bottom: 0; }
+.aic-pip.large {
+  width: 150px; height: 205px;
+}
+.aic-confirm-card { border-radius: 22px; }
+.aic-btn-red { background: #E34D4D; border-radius: 12px; }
+.aic-btn-red:active { background: #d14040; }
+.aic-btn-cancel { border: 1px solid #E4E1EE; color: #555; }
+
+/* ===== 18. AI 生成角标保持可读 ===== */
+.call-ai-badge {
+  background: rgba(124, 106, 242, 0.85);
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11px;
+}

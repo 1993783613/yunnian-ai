@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#050913">
-  <meta name="description" content="云念AI - 创建你的 AI 数字人，上传形象、选择音色，创建完成后即可发起实时语音或视频通话。">
-  <meta name="keywords" content="云念AI,AI数字人,实时通话,语音通话,视频通话,音色克隆,数字人创建">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2335e6d0'/%3E%3Cstop offset='100%25' stop-color='%232bc4b2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23g)' d='M50 20c-8 0-15 5-18 12-10 0-18 8-18 18s8 18 18 18h36c8 0 15-7 15-15s-7-15-15-15c-1-10-9-18-18-18z'/%3E%3C/svg%3E">
-  <title>云念AI</title>
+  <meta name="theme-color" content="#F1EDFB">
+  <meta name="description" content="超级念 - 创建你的 AI 数字人，上传形象、选择音色，创建完成后即可发起实时语音或视频通话。">
+  <meta name="keywords" content="超级念,AI数字人,实时通话,语音通话,视频通话,音色克隆,数字人创建,视频商城">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%237C6AF2'/%3E%3Cstop offset='100%25' stop-color='%235A48D6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='38' fill='url(%23g)'/%3E%3Ctext x='50' y='64' font-size='44' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3E%E5%BF%B5%3C/text%3E%3C/svg%3E">
+  <title>超级念</title>
   <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
@@ -25,15 +25,16 @@
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="logoG" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#35e6d0"/>
-              <stop offset="100%" stop-color="#2bc4b2"/>
+              <stop offset="0%" stop-color="#8B7CF6"/>
+              <stop offset="100%" stop-color="#5A48D6"/>
             </linearGradient>
           </defs>
-          <path fill="url(#logoG)" d="M50 20c-8 0-15 5-18 12-10 0-18 8-18 18s8 18 18 18h36c8 0 15-7 15-15s-7-15-15-15c-1-10-9-18-18-18z"/>
+          <circle cx="50" cy="50" r="40" fill="url(#logoG)"/>
+          <text x="50" y="66" font-size="46" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="bold">念</text>
         </svg>
       </div>
-      <div class="landing-title">云念AI</div>
-      <div class="landing-subtitle">让思念留在云端</div>
+      <div class="landing-title">超级念</div>
+      <div class="landing-subtitle">慢下来，感受此刻</div>
       <div class="landing-main">
         <h1 class="landing-heading">创建你的 AI 数字人</h1>
         <p class="landing-desc">上传形象、选择音色，<br>创建完成后即可发起实时语音或视频通话。</p>
@@ -57,7 +58,8 @@
       <div class="auth-logo">
         <div class="auth-logo-icon">
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="56" height="56">
-            <path fill="#35e6d0" d="M50 20c-8 0-15 5-18 12-10 0-18 8-18 18s8 18 18 18h36c8 0 15-7 15-15s-7-15-15-15c-1-10-9-18-18-18z"/>
+            <circle cx="50" cy="50" r="40" fill="#7C6AF2"/>
+            <text x="50" y="66" font-size="46" text-anchor="middle" fill="#fff" font-family="sans-serif" font-weight="bold">念</text>
           </svg>
         </div>
         <div class="auth-title" id="authTitle">创建账号</div>
@@ -101,10 +103,17 @@
   <!-- ============================================ -->
   <div class="page" id="page-library">
     <div class="topbar">
-      <div class="topbar-title">创作库</div>
+      <div class="topbar-title">创作平台</div>
       <button class="topbar-action" onclick="navigate('create')">创建角色</button>
     </div>
     <div class="page-content">
+      <div class="library-hero">
+        <div class="library-hero-card">
+          <div class="library-hero-title">超级念</div>
+          <div class="library-hero-sub">慢下来，感受此刻</div>
+          <svg class="library-hero-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+      </div>
       <div class="library-header">
         <div class="library-title">亲人实时通话</div>
         <div class="library-subtitle">数字人需要三到五分钟进行加载创建，完成后即可发起语音或视频通话。</div>
@@ -146,9 +155,85 @@
       <div style="padding: 0 20px 20px; font-size: 13px; color: var(--text-muted);">还没有数字人，点击创建第一个角色</div>
     </div>
     <div class="tabbar">
-      <div class="tab-item active">
+      <div class="tab-item active" onclick="navigate('library')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span>创作平台</span>
+      </div>
+      <div class="tab-item" onclick="navigate('shop')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span>商城</span>
+      </div>
+      <div class="tab-item" onclick="navigate('messages')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>消息</span>
+      </div>
+      <div class="tab-item" onclick="navigate('profile')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span>创作库</span>
+        <span>我的</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 3.5: 商城 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-shop">
+    <div class="topbar">
+      <div class="topbar-title">商城</div>
+    </div>
+    <div class="page-content">
+      <div class="shop-grid">
+        <div class="shop-card" onclick="showToast('视频模板「AI团圆时刻」· ¥9.9（演示版）')">
+          <div class="shop-thumb">
+            <svg viewBox="0 0 24 24" fill="#fff" class="shop-play"><path d="M8 5v14l11-7z"/></svg>
+            <div class="shop-thumb-emoji">👨‍👩‍👧‍👦</div>
+          </div>
+          <div class="shop-info">
+            <div class="shop-name">AI 团圆时刻</div>
+            <div class="shop-meta"><span class="shop-price">¥9.9</span><span class="shop-sold">已售 328</span></div>
+          </div>
+        </div>
+        <div class="shop-card" onclick="showToast('视频模板「时光信使」· ¥9.9（演示版）')">
+          <div class="shop-thumb">
+            <svg viewBox="0 0 24 24" fill="#fff" class="shop-play"><path d="M8 5v14l11-7z"/></svg>
+            <div class="shop-thumb-emoji">💌</div>
+          </div>
+          <div class="shop-info">
+            <div class="shop-name">时光信使</div>
+            <div class="shop-meta"><span class="shop-price">¥9.9</span><span class="shop-sold">已售 328</span></div>
+          </div>
+        </div>
+        <div class="shop-card" onclick="showToast('视频模板「回忆重现」· ¥9.9（演示版）')">
+          <div class="shop-thumb">
+            <svg viewBox="0 0 24 24" fill="#fff" class="shop-play"><path d="M8 5v14l11-7z"/></svg>
+            <div class="shop-thumb-emoji">🖼️</div>
+          </div>
+          <div class="shop-info">
+            <div class="shop-name">回忆重现</div>
+            <div class="shop-meta"><span class="shop-price">¥9.9</span><span class="shop-sold">已售 328</span></div>
+          </div>
+        </div>
+        <div class="shop-card" onclick="showToast('视频模板「思念相册」· ¥9.9（演示版）')">
+          <div class="shop-thumb">
+            <svg viewBox="0 0 24 24" fill="#fff" class="shop-play"><path d="M8 5v14l11-7z"/></svg>
+            <div class="shop-thumb-emoji">💐</div>
+          </div>
+          <div class="shop-info">
+            <div class="shop-name">思念相册</div>
+            <div class="shop-meta"><span class="shop-price">¥9.9</span><span class="shop-sold">已售 328</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="padding: 16px 20px 24px; text-align: center; font-size: 12px; color: var(--text-muted);">更多视频模板持续上线中</div>
+    </div>
+    <div class="tabbar">
+      <div class="tab-item" onclick="navigate('library')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span>创作平台</span>
+      </div>
+      <div class="tab-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span>商城</span>
       </div>
       <div class="tab-item" onclick="navigate('messages')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -167,7 +252,7 @@
   <div class="page" id="page-create">
     <div class="topbar">
       <button class="topbar-back" onclick="navigate('library')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>返回创作库
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>返回创作平台
       </button>
       <div class="topbar-title">创建新角色</div>
     </div>
@@ -285,7 +370,7 @@
       <!-- AI 角色通话：确认弹窗（对齐真实云念AI） -->
       <div id="aicConfirmMask" class="aic-modal-mask" style="display:none">
         <div class="aic-confirm-card">
-          <div class="aic-confirm-title">云念AI</div>
+          <div class="aic-confirm-title">超级念</div>
           <div class="aic-confirm-body" id="aicConfirmText">—</div>
           <button class="aic-btn-red" onclick="aiCallGo()">确定</button>
           <button class="aic-btn-cancel" onclick="aiCallCancel()">取消</button>
@@ -332,33 +417,40 @@
           <div class="aic-phase-sub" id="aicPhaseSub">正在申请麦克风权限…</div>
         </div>
 
-        <!-- 底部控制区 -->
+        <!-- 底部控制区（微信视频通话式：上排三钮 + 下排小窗/挂断/翻转） -->
         <div class="aic-bottom">
           <div class="aic-ctls">
             <div class="aic-ctl" id="micCtlBtn" onclick="aiToggleMic()">
               <div class="aic-ctl-circle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
               </div>
-              <div class="aic-ctl-label">麦克风已开</div>
+              <div class="aic-ctl-label" id="micCtlLabel">麦克风已开</div>
+            </div>
+            <div class="aic-ctl" id="spkCtlBtn" onclick="aiToggleSpeaker()">
+              <div class="aic-ctl-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+              </div>
+              <div class="aic-ctl-label" id="spkCtlLabel">扬声器已开</div>
             </div>
             <div class="aic-ctl" id="camCtlBtn" onclick="aiToggleCam()">
               <div class="aic-ctl-circle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/><line x1="1" y1="1" x2="23" y2="23" class="slash"/></svg>
               </div>
-              <div class="aic-ctl-label">摄像头已关</div>
-            </div>
-            <div class="aic-ctl" onclick="aiFlipCamera()">
-              <div class="aic-ctl-circle">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-              </div>
-              <div class="aic-ctl-label">翻转</div>
+              <div class="aic-ctl-label" id="camCtlLabel">摄像头已开</div>
             </div>
           </div>
-          <div class="aic-hangup-wrap" id="aicHangupWrap">
-            <button class="aic-hangup" onclick="aiHangup()" aria-label="挂断">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.17-2.6 2.02-.18.21-.43.32-.68.32-.27 0-.53-.11-.71-.29L.86 13.78a.95.95 0 0 1-.28-.69c0-.27.11-.53.29-.71C3.84 9.74 7.83 8.5 12 8.5s8.16 1.24 11.13 3.88c.18.18.29.44.29.71 0 .27-.11.51-.29.69l-2.99 3.01c-.18.18-.44.29-.71.29-.25 0-.5-.11-.68-.32-.74-.85-1.62-1.53-2.6-2.02-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" transform="rotate(135 12 12)"/></svg>
-            </button>
-            <div class="aic-hangup-label">挂断</div>
+          <div class="aic-ctls aic-ctls-sub">
+            <div class="aic-ctl-mini" onclick="aiTogglePip()" aria-label="小窗">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><rect x="12" y="12" width="8" height="6" rx="1" fill="currentColor" stroke="none"/></svg>
+            </div>
+            <div class="aic-hangup-wrap">
+              <button class="aic-hangup" onclick="aiHangup()" aria-label="挂断">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.17-2.6 2.02-.18.21-.43.32-.68.32-.27 0-.53-.11-.71-.29L.86 13.78a.95.95 0 0 1-.28-.69c0-.27.11-.53.29-.71C3.84 9.74 7.83 8.5 12 8.5s8.16 1.24 11.13 3.88c.18.18.29.44.29.71 0 .27-.11.51-.29.69l-2.99 3.01c-.18.18-.44.29-.71.29-.25 0-.5-.11-.68-.32-.74-.85-1.62-1.53-2.6-2.02-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" transform="rotate(135 12 12)"/></svg>
+              </button>
+            </div>
+            <div class="aic-ctl-mini" onclick="aiFlipCamera()" aria-label="翻转摄像头">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            </div>
           </div>
         </div>
 
@@ -460,7 +552,7 @@
         </div>
         <div class="message-item" onclick="showToast('查看公告')">
           <div class="message-icon notice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
-          <div class="message-content"><div class="message-title">公告中心 <span class="message-time">2小时前</span></div><div class="message-preview">欢迎使用云念AI，新用户赠送10念想值</div></div>
+          <div class="message-content"><div class="message-title">公告中心 <span class="message-time">2小时前</span></div><div class="message-preview">欢迎使用超级念，新用户赠送10念想值</div></div>
         </div>
         <div class="message-item" onclick="navigate('recharge')">
           <div class="message-icon business"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
@@ -468,7 +560,7 @@
         </div>
         <div class="message-item" onclick="showToast('查看欢迎消息')">
           <div class="message-icon system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
-          <div class="message-content"><div class="message-title">欢迎消息 <span class="message-time">3天前</span></div><div class="message-preview">欢迎来到云念AI，开始创建你的第一个数字人吧</div></div>
+          <div class="message-content"><div class="message-title">欢迎消息 <span class="message-time">3天前</span></div><div class="message-preview">欢迎来到超级念，开始创建你的第一个数字人吧</div></div>
         </div>
         <div class="message-item" onclick="showToast('查看业务通知')">
           <div class="message-icon business"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
@@ -477,9 +569,22 @@
       </div>
     </div>
     <div class="tabbar">
-      <div class="tab-item" onclick="navigate('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>创作库</span></div>
-      <div class="tab-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>消息</span></div>
-      <div class="tab-item" onclick="navigate('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
+      <div class="tab-item" onclick="navigate('library')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span>创作平台</span>
+      </div>
+      <div class="tab-item" onclick="navigate('shop')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span>商城</span>
+      </div>
+      <div class="tab-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>消息</span>
+      </div>
+      <div class="tab-item" onclick="navigate('profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>我的</span>
+      </div>
     </div>
   </div>
 
@@ -489,18 +594,18 @@
   <div class="page" id="page-profile">
     <div class="topbar"><div class="topbar-title">我的</div></div>
     <div class="page-content">
-      <div class="profile-header">
+      <div class="profile-card">
         <div class="profile-avatar">用</div>
-        <div class="profile-info"><div class="profile-name">云念用户</div><div class="profile-meta">手机号 · 未绑定</div></div>
-      </div>
-      <div class="profile-balance" onclick="navigate('recharge')">
-        <div class="balance-info"><div class="balance-label">当前念想值余额</div><div class="balance-amount">10</div></div>
-        <button class="btn btn-primary" style="width: auto; padding: 8px 16px; font-size: 14px;">去充值</button>
+        <div class="profile-info"><div class="profile-name">超级念用户</div><div class="profile-meta">手机号 · 未绑定</div></div>
+        <div class="profile-right">
+          <div class="profile-balance-chip">10 点</div>
+          <button class="profile-recharge-btn" onclick="navigate('recharge')">去充值</button>
+        </div>
       </div>
       <div class="menu-list">
         <div class="menu-item" onclick="navigate('recharge')">
-          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-          <div class="menu-text">订单与消费明细</div>
+          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+          <div class="menu-text">消费记录</div>
           <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
         <div class="menu-item" onclick="showToast('管理个人音色')">
@@ -508,9 +613,14 @@
           <div class="menu-text">个人音色管理</div>
           <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
-        <div class="menu-item" onclick="showToast('代理中心')">
-          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
-          <div class="menu-text">代理中心</div>
+        <div class="menu-item" onclick="showToast('超级代理')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M4 20V10l4 3 4-7 4 7 4-3v10"/></svg></div>
+          <div class="menu-text">超级代理</div>
+          <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+        <div class="menu-item" onclick="showToast('客服咨询')">
+          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></div>
+          <div class="menu-text">客服咨询</div>
           <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
         <div class="menu-item" onclick="showToast('合作联系')">
@@ -519,7 +629,7 @@
           <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
         <div class="menu-item" onclick="showToast('问题反馈')">
-          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
           <div class="menu-text">问题反馈</div>
           <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
@@ -528,17 +638,30 @@
           <div class="menu-text">设置与隐私</div>
           <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
-        <div class="menu-item" onclick="navigate('landing')">
-          <div class="menu-icon" style="color: var(--color-danger);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
-          <div class="menu-text" style="color: var(--color-danger);">退出登录</div>
-        </div>
       </div>
-      <div style="padding: 24px 20px; text-align: center; font-size: 12px; color: var(--text-muted);">云念AI · 让思念留在云端<br>湘ICP备2026034947号-1</div>
+      <div class="logout-row" onclick="navigate('landing')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>退出登录</span>
+      </div>
+      <div style="padding: 24px 20px; text-align: center; font-size: 12px; color: var(--text-muted);">超级念 · 慢下来，感受此刻<br>湘ICP备2026034947号-1</div>
     </div>
     <div class="tabbar">
-      <div class="tab-item" onclick="navigate('library')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>创作库</span></div>
-      <div class="tab-item" onclick="navigate('messages')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>消息</span></div>
-      <div class="tab-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
+      <div class="tab-item" onclick="navigate('library')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span>创作平台</span>
+      </div>
+      <div class="tab-item" onclick="navigate('shop')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span>商城</span>
+      </div>
+      <div class="tab-item" onclick="navigate('messages')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>消息</span>
+      </div>
+      <div class="tab-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>我的</span>
+      </div>
     </div>
   </div>
 
@@ -645,7 +768,7 @@
     </div>
     <div class="page-content" style="padding: 20px; font-size: 14px; line-height: 1.8; color: var(--text-secondary);">
       <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">服务说明</h3>
-      <p style="margin-bottom: 16px;">云念AI 通过 AI 数字人提供角色创建和实时音视频互动。数字人生成的声音、画面和回复不代表真人意见，不应作为医疗、法律、金融等专业结论。</p>
+      <p style="margin-bottom: 16px;">超级念 通过 AI 数字人提供角色创建和实时音视频互动。数字人生成的声音、画面和回复不代表真人意见，不应作为医疗、法律、金融等专业结论。</p>
       <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">账号责任</h3>
       <p style="margin-bottom: 16px;">请妥善保管账号和密码，不得出借账号、冒用他人身份或利用服务侵害他人权益。发现异常使用时，请立即通过本公众号联系运营方。</p>
       <h3 style="font-size: 17px; margin-bottom: 12px; color: var(--brand);">素材权利</h3>
@@ -691,9 +814,9 @@
 <!-- 腾讯云 TRTC Web SDK（官方国内 CDN，失败时回退 unpkg） -->
 <script src="https://trtc-1252463788.file.myqcloud.com/web/TRTCSDK/trtc-sdk-v5/latest/trtc.js"
         onerror="var s=document.createElement('script');s.src='https://unpkg.com/trtc-sdk-v5@latest/trtc.js';document.head.appendChild(s);"></script>
-<script src="./js/config.js?v=20260905f"></script>
-<script src="./js/app.js?v=20260906a"></script>
-<script src="./js/trtc-call.js?v=20260906a"></script>
-<script src="./js/ai-call.js?v=20260906a"></script>
+<script src="./js/config.js?v=20260906b"></script>
+<script src="./js/app.js?v=20260906b"></script>
+<script src="./js/trtc-call.js?v=20260906b"></script>
+<script src="./js/ai-call.js?v=20260906b"></script>
 </body>
 </html>
