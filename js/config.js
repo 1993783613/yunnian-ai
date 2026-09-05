@@ -8,9 +8,7 @@
 const TRTC_CONFIG = {
   sdkAppId: 1600160855,
 
-  // UserSig 签发服务地址（腾讯云函数 URL）
-  // 部署完 cloud-function 目录里的云函数后，把函数 URL 填到这里，例如：
-  //   'https://1234567890-ap-guangzhou.tencentscf.com/'
-  // 部署前保持为空字符串，通话页面会给出提示
-  userSigServer: ''
+  // UserSig 签发服务地址（腾讯云函数）
+  // 已部署并验证通过
+  userSigServer: 'https://1422484427-kxu5p373mj.ap-guangzhou.tencentscf.com/'
 };
