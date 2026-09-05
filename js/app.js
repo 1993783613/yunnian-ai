@@ -339,35 +339,39 @@ function submitCreate() {
   setTimeout(() => navigate('library'), 1000);
 }
 
-// ===== 创作库：渲染"我的角色" =====
+// ===== 创作平台：渲染"我的角色"（图左文下 + 右侧竖排按钮卡片） =====
 function renderMyCharacters() {
-  const section = document.getElementById('myCharactersSection');
-  const grid = document.getElementById('myCharactersGrid');
-  if (!section || !grid) return;
+  const list = document.getElementById('myCharactersList');
+  const createCard = document.getElementById('libCreateCard');
+  if (!list) return;
 
   let characters = [];
   try { characters = JSON.parse(localStorage.getItem('yn_characters') || '[]'); } catch (e) {}
 
   if (!characters.length) {
-    section.classList.add('hidden');
-    grid.innerHTML = '';
+    list.innerHTML = '';
+    if (createCard) createCard.classList.remove('hidden');
     return;
   }
+  if (createCard) createCard.classList.add('hidden');
 
-  section.classList.remove('hidden');
-  grid.innerHTML = characters.map(c => {
+  list.innerHTML = characters.map(c => {
     const ready = Date.now() - c.createdAt >= CHAR_READY_AFTER_MS;
-    const badge = ready ? '可语音/视频' : '创建中…';
-    const avatar = c.photo
-      ? '<img src="' + c.photo + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">'
-      : '<div class="dh-avatar">' + (c.name || '角').slice(0, 1) + '</div>';
-    return '<div class="dh-card" data-char-id="' + c.id + '" onclick="aiCallConfirm(\'' + c.id + '\',\'video\')">' +
-      '<div class="dh-card-photo"><div class="dh-card-badge">' + badge + '</div>' + avatar + '</div>' +
-      '<div class="dh-card-info"><div class="dh-card-name">' + escapeHtml(c.name) + '</div>' +
-      '<div class="dh-card-relation">' + escapeHtml(c.relation || (c.age ? c.age + '岁' : '我的亲人')) + ' · ' + escapeHtml(c.voice) + '</div></div>' +
-      '<div class="dh-card-actions">' +
-      '<button onclick="event.stopPropagation();aiCallConfirm(\'' + c.id + '\',\'voice\')">语音</button>' +
-      '<button onclick="event.stopPropagation();aiCallConfirm(\'' + c.id + '\',\'video\')">视频</button>' +
+    const badge = ready ? '' : '<div class="lib-role-badge">创建中…</div>';
+    const photo = c.photo
+      ? '<img src="' + c.photo + '" alt="">'
+      : '<span class="lib-role-emoji">👨‍👩‍👧</span>';
+    return '<div class="lib-role-card" data-char-id="' + c.id + '" onclick="aiCallConfirm(\'' + c.id + '\',\'video\')">' +
+      '<div class="lib-role-left">' +
+        '<div class="lib-role-photo">' + badge + photo + '</div>' +
+        '<div class="lib-role-name">' + escapeHtml(c.name) + '</div>' +
+        '<div class="lib-role-meta">' + escapeHtml(c.relation || '我的亲人') + ' · ' + escapeHtml(c.voice) + '</div>' +
+      '</div>' +
+      '<div class="lib-role-btns">' +
+        '<button class="lib-btn-solid" onclick="event.stopPropagation();aiCallConfirm(\'' + c.id + '\',\'voice\')">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>语音</button>' +
+        '<button class="lib-btn-ghost" onclick="event.stopPropagation();aiCallConfirm(\'' + c.id + '\',\'video\')">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>视频</button>' +
       '</div></div>';
   }).join('');
 

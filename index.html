@@ -102,57 +102,86 @@
   <!-- 页面 3: 创作库 -->
   <!-- ============================================ -->
   <div class="page" id="page-library">
-    <div class="topbar">
-      <div class="topbar-title">创作平台</div>
-      <button class="topbar-action" onclick="navigate('create')">创建角色</button>
-    </div>
-    <div class="page-content">
-      <div class="library-hero">
-        <div class="library-hero-card">
-          <div class="library-hero-title">超级念</div>
-          <div class="library-hero-sub">慢下来，感受此刻</div>
-          <svg class="library-hero-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <div class="page-content lib-page">
+      <!-- 顶部紫色横幅 -->
+      <div class="lib-hero">
+        <div class="lib-hero-text">
+          <div class="lib-hero-title">超级念</div>
+          <div class="lib-hero-sub">慢下来 感受此刻</div>
+        </div>
+        <svg class="lib-hero-clock" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="46" fill="rgba(255,255,255,0.18)"/>
+          <circle cx="50" cy="50" r="38" fill="#F3D9EF"/>
+          <g stroke="#B98BC4" stroke-width="3" stroke-linecap="round">
+            <line x1="50" y1="17" x2="50" y2="24"/>
+            <line x1="50" y1="76" x2="50" y2="83"/>
+            <line x1="17" y1="50" x2="24" y2="50"/>
+            <line x1="76" y1="50" x2="83" y2="50"/>
+          </g>
+          <line x1="50" y1="50" x2="50" y2="30" stroke="#8E5E9E" stroke-width="4" stroke-linecap="round"/>
+          <line x1="50" y1="50" x2="64" y2="58" stroke="#8E5E9E" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="50" cy="50" r="4" fill="#8E5E9E"/>
+        </svg>
+      </div>
+
+      <!-- 我的角色 -->
+      <div class="lib-section">
+        <div class="lib-section-title">我的角色</div>
+        <button class="lib-add-btn" onclick="navigate('create')" aria-label="创建角色">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div id="myCharactersList"></div>
+      <div class="lib-create-card" id="libCreateCard" onclick="navigate('create')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>创建第一个角色</span>
+      </div>
+
+      <!-- 平台示例 -->
+      <div class="lib-section">
+        <div class="lib-section-title">平台示例</div>
+      </div>
+      <div class="lib-demo-card" onclick="aiCallConfirm('demo_grandma','video')">
+        <svg class="lib-demo-illus" viewBox="0 0 360 210" preserveAspectRatio="xMidYMid slice">
+          <!-- 背景与沙发 -->
+          <rect x="0" y="0" width="360" height="210" fill="#F4F1FB"/>
+          <rect x="60" y="118" width="240" height="66" rx="18" fill="#E4DCF6"/>
+          <rect x="46" y="100" width="34" height="88" rx="16" fill="#D8CEF2"/>
+          <rect x="280" y="100" width="34" height="88" rx="16" fill="#D8CEF2"/>
+          <rect x="52" y="182" width="18" height="18" rx="6" fill="#C9BCEA"/>
+          <rect x="290" y="182" width="18" height="18" rx="6" fill="#C9BCEA"/>
+          <!-- 奶奶（左） -->
+          <g>
+            <circle cx="140" cy="88" r="22" fill="#FBD9C8"/>
+            <path d="M118 84 a22 22 0 0 1 44 0 l-4 -14 a22 22 0 0 0 -36 0 z" fill="#E8E4EE"/>
+            <path d="M114 78 q26 -22 52 0 l0 -6 q-26 -20 -52 0 z" fill="#D9D3E4"/>
+            <circle cx="133" cy="90" r="2.6" fill="#4A3F55"/>
+            <circle cx="147" cy="90" r="2.6" fill="#4A3F55"/>
+            <path d="M134 99 q6 5 12 0" stroke="#C97B6B" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            <circle cx="128" cy="96" r="3" fill="#F2B3A0" opacity="0.7"/>
+            <circle cx="152" cy="96" r="3" fill="#F2B3A0" opacity="0.7"/>
+            <path d="M116 128 q24 -22 48 0 l6 40 q-30 10 -60 0 z" fill="#8E79E8"/>
+          </g>
+          <!-- 爷爷（右） -->
+          <g>
+            <circle cx="220" cy="86" r="22" fill="#F6CDAE"/>
+            <path d="M198 82 a22 22 0 0 1 44 0 l0 -8 a22 22 0 0 0 -44 0 z" fill="#EFEAE2"/>
+            <circle cx="213" cy="88" r="2.6" fill="#4A3F55"/>
+            <circle cx="227" cy="88" r="2.6" fill="#4A3F55"/>
+            <path d="M214 96 q6 4 12 0" stroke="#B97F5E" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            <path d="M206 74 q14 -8 28 0" stroke="#D8D2C6" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <circle cx="208" cy="94" r="3" fill="#EDAF8E" opacity="0.7"/>
+            <circle cx="232" cy="94" r="3" fill="#EDAF8E" opacity="0.7"/>
+            <path d="M196 126 q24 -22 48 0 l6 42 q-30 10 -60 0 z" fill="#F0995C"/>
+          </g>
+          <!-- 牵手 -->
+          <path d="M162 152 q18 12 36 0" stroke="#FBD9C8" stroke-width="12" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="lib-demo-chip">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <span>点击体验</span>
         </div>
       </div>
-      <div class="library-header">
-        <div class="library-title">亲人实时通话</div>
-        <div class="library-subtitle">数字人需要三到五分钟进行加载创建，完成后即可发起语音或视频通话。</div>
-      </div>
-      <div id="myCharactersSection" class="hidden">
-        <div class="section-label"><span>我的角色</span><span class="label-action">创建于本机</span></div>
-        <div class="digital-humans-grid" id="myCharactersGrid"></div>
-      </div>
-      <div class="section-label"><span>平台示例</span><span class="label-action">AI 数字人</span></div>
-      <div class="digital-humans-grid" id="digitalHumansGrid">
-        <div class="dh-card" onclick="aiCallConfirm('demo_grandma','video')">
-          <div class="dh-card-photo">
-            <div class="dh-card-badge">可语音/视频</div>
-            <div class="dh-avatar">奶</div>
-          </div>
-          <div class="dh-card-info"><div class="dh-card-name">瑶瑶的奶奶</div><div class="dh-card-relation">我的外婆</div></div>
-          <div class="dh-card-actions">
-            <button onclick="event.stopPropagation();aiCallConfirm('demo_grandma','voice')">语音</button>
-            <button onclick="event.stopPropagation();aiCallConfirm('demo_grandma','video')">视频</button>
-          </div>
-        </div>
-        <div class="dh-card" onclick="aiCallConfirm('demo_grandpa','video')">
-          <div class="dh-card-photo">
-            <div class="dh-card-badge">可视频通话</div>
-            <div class="dh-avatar">爷</div>
-          </div>
-          <div class="dh-card-info"><div class="dh-card-name">阿哲的爷爷</div><div class="dh-card-relation">最疼我的爷爷</div></div>
-          <div class="dh-card-actions">
-            <button onclick="event.stopPropagation();aiCallConfirm('demo_grandpa','voice')">语音</button>
-            <button onclick="event.stopPropagation();aiCallConfirm('demo_grandpa','video')">视频</button>
-          </div>
-        </div>
-        <div class="create-card" onclick="navigate('create')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span>创建第一个角色</span>
-        </div>
-      </div>
-      <div class="section-label"><span>我的数字人</span><span class="label-action">编辑</span></div>
-      <div style="padding: 0 20px 20px; font-size: 13px; color: var(--text-muted);">还没有数字人，点击创建第一个角色</div>
     </div>
     <div class="tabbar">
       <div class="tab-item active" onclick="navigate('library')">
@@ -815,7 +844,7 @@
 <script src="https://trtc-1252463788.file.myqcloud.com/web/TRTCSDK/trtc-sdk-v5/latest/trtc.js"
         onerror="var s=document.createElement('script');s.src='https://unpkg.com/trtc-sdk-v5@latest/trtc.js';document.head.appendChild(s);"></script>
 <script src="./js/config.js?v=20260906b"></script>
-<script src="./js/app.js?v=20260906b"></script>
+<script src="./js/app.js?v=20260906d"></script>
 <script src="./js/trtc-call.js?v=20260906b"></script>
 <script src="./js/ai-call.js?v=20260906b"></script>
 </body>
