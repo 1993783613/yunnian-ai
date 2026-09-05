@@ -1599,3 +1599,23 @@ ul { list-style: none; }
   font-size: 12px; font-style: italic; font-family: serif;
   cursor: pointer;
 }
+
+/* 真实数字人云渲染视频容器 + 调试日志 */
+.aic-remote-box {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  background: #000;
+  z-index: 1;
+}
+.aic-remote-box video { width: 100%; height: 100%; object-fit: cover; }
+.aic-debug-log {
+  position: absolute;
+  left: 12px; top: 14px;
+  max-width: 62%;
+  font-size: 10px; line-height: 1.5;
+  color: rgba(255,255,255,0.45);
+  font-family: monospace;
+  z-index: 6;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  pointer-events: none;
+}

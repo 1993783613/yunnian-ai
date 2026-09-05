@@ -297,6 +297,8 @@
         <!-- 全屏数字人画面 -->
         <div id="aicConnected" class="aic-connected" style="display:none">
           <img id="aicFullPhoto" class="aic-full-photo" alt="" draggable="false">
+          <!-- 真实数字人云渲染视频（流就绪后覆盖照片） -->
+          <div id="aicRemoteBox" class="aic-remote-box" style="display:none"></div>
           <!-- 右上角自己小窗 -->
           <div class="aic-pip">
             <video id="aicPipVideo" autoplay playsinline muted style="display:none"></video>
@@ -306,6 +308,8 @@
           </div>
           <!-- 我说的话（气泡） -->
           <div class="aic-user-bubble" id="aicUserBubble" style="display:none"></div>
+          <!-- 诊断日志 -->
+          <div class="aic-debug-log" id="aicDebugLog"></div>
           <!-- 字幕 -->
           <div class="aic-subtitle" id="aicSubtitle" style="display:none"></div>
           <!-- 快捷回复（不支持语音识别的设备显示） -->
@@ -688,8 +692,8 @@
 <script src="https://trtc-1252463788.file.myqcloud.com/web/TRTCSDK/trtc-sdk-v5/latest/trtc.js"
         onerror="var s=document.createElement('script');s.src='https://unpkg.com/trtc-sdk-v5@latest/trtc.js';document.head.appendChild(s);"></script>
 <script src="./js/config.js?v=20260905f"></script>
-<script src="./js/app.js?v=20260905g"></script>
-<script src="./js/trtc-call.js?v=20260905g"></script>
-<script src="./js/ai-call.js?v=20260905g"></script>
+<script src="./js/app.js?v=20260906a"></script>
+<script src="./js/trtc-call.js?v=20260906a"></script>
+<script src="./js/ai-call.js?v=20260906a"></script>
 </body>
 </html>

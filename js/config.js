@@ -10,5 +10,10 @@ const TRTC_CONFIG = {
 
   // UserSig 签发服务地址（腾讯云函数）
   // 已部署并验证通过
-  userSigServer: 'https://1422484427-kxu5p373mj.ap-guangzhou.tencentscf.com/'
+  userSigServer: 'https://1422484427-kxu5p373mj.ap-guangzhou.tencentscf.com/',
+
+  // IVH 数字人服务（同一个云函数 v2，含 create/status/start/drive/close）
+  // 云函数更新到 v3 版并配置 IVH_APPKEY / IVH_ACCESSTOKEN / IVH_IMAGE_ID 后即可用
+  // 为空时通话走演示模式（照片+本地语音合成），配置后自动切换真实数字人
+  ivhServer: 'https://1422484427-kxu5p373mj.ap-guangzhou.tencentscf.com/'
 };
