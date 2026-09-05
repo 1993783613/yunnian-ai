@@ -79,7 +79,7 @@ ul { list-style: none; }
 .phone-shell {
   max-width: 430px;
   margin: 0 auto;
-  min-height: 100dvh;
+  height: 100dvh;
   background: var(--bg-darkest);
   position: relative;
   overflow: hidden;
@@ -108,7 +108,8 @@ ul { list-style: none; }
 .page {
   display: none;
   flex-direction: column;
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
   animation: fadeIn 0.3s ease;
 }
 .page.active { display: flex; }
@@ -259,6 +260,7 @@ ul { list-style: none; }
   text-align: center;
   padding: 40px 28px;
   position: relative;
+  overflow-y: auto;
   background: radial-gradient(ellipse at 50% 30%, rgba(53, 230, 208, 0.08) 0%, transparent 60%),
               radial-gradient(ellipse at 50% 80%, rgba(53, 230, 208, 0.04) 0%, transparent 50%),
               var(--bg-darkest);
@@ -342,6 +344,7 @@ ul { list-style: none; }
   display: flex;
   flex-direction: column;
   padding: 40px 28px;
+  overflow-y: auto;
 }
 .auth-logo {
   text-align: center;
@@ -1684,6 +1687,7 @@ body {
   position: sticky;
   bottom: 0;
   z-index: 90;
+  flex-shrink: 0;
   margin: 8px 14px max(12px, env(safe-area-inset-bottom));
   padding: 10px 6px calc(10px - 2px);
   background: rgba(255, 255, 255, 0.96);
