@@ -75,9 +75,21 @@ function aiCallCancel() {
 }
 
 // ===== 第 2 步：发起呼叫 =====
+// iOS 需要在用户点击手势内解锁语音合成，否则后续 speak 无声
+function aiUnlockSpeech() {
+  try {
+    if ('speechSynthesis' in window) {
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      speechSynthesis.speak(u);
+    }
+  } catch (e) {}
+}
+
 async function aiCallGo() {
   document.getElementById('aicConfirmMask').style.display = 'none';
   if (!aiCallChar) return;
+  aiUnlockSpeech();
   aiCallState = 'calling';
 
   // 卡片按钮变「呼叫中…」
