@@ -115,26 +115,26 @@
       </div>
       <div class="section-label"><span>平台示例</span><span class="label-action">AI 数字人</span></div>
       <div class="digital-humans-grid" id="digitalHumansGrid">
-        <div class="dh-card" onclick="navigate('call')">
+        <div class="dh-card" onclick="aiCallConfirm('demo_grandma','video')">
           <div class="dh-card-photo">
             <div class="dh-card-badge">可语音/视频</div>
             <div class="dh-avatar">奶</div>
           </div>
           <div class="dh-card-info"><div class="dh-card-name">瑶瑶的奶奶</div><div class="dh-card-relation">我的外婆</div></div>
           <div class="dh-card-actions">
-            <button onclick="event.stopPropagation();navigate('call')">语音</button>
-            <button onclick="event.stopPropagation();navigate('call')">视频</button>
+            <button onclick="event.stopPropagation();aiCallConfirm('demo_grandma','voice')">语音</button>
+            <button onclick="event.stopPropagation();aiCallConfirm('demo_grandma','video')">视频</button>
           </div>
         </div>
-        <div class="dh-card" onclick="navigate('call')">
+        <div class="dh-card" onclick="aiCallConfirm('demo_grandpa','video')">
           <div class="dh-card-photo">
             <div class="dh-card-badge">可视频通话</div>
             <div class="dh-avatar">爷</div>
           </div>
           <div class="dh-card-info"><div class="dh-card-name">阿哲的爷爷</div><div class="dh-card-relation">最疼我的爷爷</div></div>
           <div class="dh-card-actions">
-            <button onclick="event.stopPropagation();navigate('call')">语音</button>
-            <button onclick="event.stopPropagation();navigate('call')">视频</button>
+            <button onclick="event.stopPropagation();aiCallConfirm('demo_grandpa','voice')">语音</button>
+            <button onclick="event.stopPropagation();aiCallConfirm('demo_grandpa','video')">视频</button>
           </div>
         </div>
         <div class="create-card" onclick="navigate('create')">
@@ -281,6 +281,90 @@
   <!-- ============================================ -->
   <div class="page" id="page-call">
     <div class="call-page">
+
+      <!-- AI 角色通话：确认弹窗（对齐真实云念AI） -->
+      <div id="aicConfirmMask" class="aic-modal-mask" style="display:none">
+        <div class="aic-confirm-card">
+          <div class="aic-confirm-title">云念AI</div>
+          <div class="aic-confirm-body" id="aicConfirmText">—</div>
+          <button class="aic-btn-red" onclick="aiCallGo()">确定</button>
+          <button class="aic-btn-cancel" onclick="aiCallCancel()">取消</button>
+        </div>
+      </div>
+
+      <!-- AI 角色通话：全屏通话界面（微信视频风格） -->
+      <div id="aiCallScreen" class="ai-call-screen" style="display:none">
+        <!-- 全屏数字人画面 -->
+        <div id="aicConnected" class="aic-connected" style="display:none">
+          <img id="aicFullPhoto" class="aic-full-photo" alt="" draggable="false">
+          <!-- 右上角自己小窗 -->
+          <div class="aic-pip">
+            <video id="aicPipVideo" autoplay playsinline muted style="display:none"></video>
+            <div class="aic-pip-hint" id="aicPipHint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            </div>
+          </div>
+          <!-- 我说的话（气泡） -->
+          <div class="aic-user-bubble" id="aicUserBubble" style="display:none"></div>
+          <!-- 字幕 -->
+          <div class="aic-subtitle" id="aicSubtitle" style="display:none"></div>
+          <!-- 快捷回复（不支持语音识别的设备显示） -->
+          <div class="aic-chips" id="aicChips" style="display:none">
+            <button onclick="aiChipReply('我想你了')">我想你了</button>
+            <button onclick="aiChipReply('最近身体好吗')">身体好吗</button>
+            <button onclick="aiChipReply('讲讲以前的事')">讲讲以前</button>
+            <button onclick="aiChipReply('我过几天回去看你')">回去看你</button>
+          </div>
+        </div>
+
+        <!-- 呼叫阶段：头像 + 状态 -->
+        <div id="aicPhase" class="aic-phase">
+          <div class="aic-avatar">
+            <img id="aicAvatarImg" alt="" draggable="false">
+            <div class="aic-avatar-letter" id="aicAvatarLetter">亲</div>
+          </div>
+          <div class="aic-name" id="aicName">—</div>
+          <div class="aic-phase-main" id="aicPhaseMain">正在创建通话…</div>
+          <div class="aic-phase-sub" id="aicPhaseSub">正在申请麦克风权限…</div>
+        </div>
+
+        <!-- 底部控制区 -->
+        <div class="aic-bottom">
+          <div class="aic-ctls">
+            <div class="aic-ctl" id="micCtlBtn" onclick="aiToggleMic()">
+              <div class="aic-ctl-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+              </div>
+              <div class="aic-ctl-label">麦克风已开</div>
+            </div>
+            <div class="aic-ctl" id="camCtlBtn" onclick="aiToggleCam()">
+              <div class="aic-ctl-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/><line x1="1" y1="1" x2="23" y2="23" class="slash"/></svg>
+              </div>
+              <div class="aic-ctl-label">摄像头已关</div>
+            </div>
+            <div class="aic-ctl" onclick="aiFlipCamera()">
+              <div class="aic-ctl-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              </div>
+              <div class="aic-ctl-label">翻转</div>
+            </div>
+          </div>
+          <div class="aic-hangup-wrap" id="aicHangupWrap">
+            <button class="aic-hangup" onclick="aiHangup()" aria-label="挂断">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.17-2.6 2.02-.18.21-.43.32-.68.32-.27 0-.53-.11-.71-.29L.86 13.78a.95.95 0 0 1-.28-.69c0-.27.11-.53.29-.71C3.84 9.74 7.83 8.5 12 8.5s8.16 1.24 11.13 3.88c.18.18.29.44.29.71 0 .27-.11.51-.29.69l-2.99 3.01c-.18.18-.44.29-.71.29-.25 0-.5-.11-.68-.32-.74-.85-1.62-1.53-2.6-2.02-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" transform="rotate(135 12 12)"/></svg>
+            </button>
+            <div class="aic-hangup-label">挂断</div>
+          </div>
+        </div>
+
+        <!-- 底部状态条：计时 + AI标识 -->
+        <div class="aic-statusbar">
+          <div class="aic-timer" id="aicTimer">00:00</div>
+          <div class="aic-badge">AI 生成数字人</div>
+          <button class="aic-info" onclick="aiInfo()">i</button>
+        </div>
+      </div>
 
       <!-- 状态一：通话大厅（发起 / 加入） -->
       <div id="callLobby" class="call-lobby">
@@ -604,7 +688,8 @@
 <script src="https://trtc-1252463788.file.myqcloud.com/web/TRTCSDK/trtc-sdk-v5/latest/trtc.js"
         onerror="var s=document.createElement('script');s.src='https://unpkg.com/trtc-sdk-v5@latest/trtc.js';document.head.appendChild(s);"></script>
 <script src="./js/config.js?v=20260905f"></script>
-<script src="./js/app.js?v=20260905f"></script>
-<script src="./js/trtc-call.js?v=20260905f"></script>
+<script src="./js/app.js?v=20260905g"></script>
+<script src="./js/trtc-call.js?v=20260905g"></script>
+<script src="./js/ai-call.js?v=20260905g"></script>
 </body>
 </html>

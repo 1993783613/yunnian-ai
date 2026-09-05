@@ -361,13 +361,13 @@ function renderMyCharacters() {
     const avatar = c.photo
       ? '<img src="' + c.photo + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">'
       : '<div class="dh-avatar">' + (c.name || '角').slice(0, 1) + '</div>';
-    return '<div class="dh-card" onclick="navigate(\'call\')">' +
+    return '<div class="dh-card" data-char-id="' + c.id + '" onclick="aiCallConfirm(\'' + c.id + '\',\'video\')">' +
       '<div class="dh-card-photo"><div class="dh-card-badge">' + badge + '</div>' + avatar + '</div>' +
       '<div class="dh-card-info"><div class="dh-card-name">' + escapeHtml(c.name) + '</div>' +
       '<div class="dh-card-relation">' + escapeHtml(c.relation || (c.age ? c.age + '岁' : '我的亲人')) + ' · ' + escapeHtml(c.voice) + '</div></div>' +
       '<div class="dh-card-actions">' +
-      '<button onclick="event.stopPropagation();navigate(\'call\')">语音</button>' +
-      '<button onclick="event.stopPropagation();navigate(\'call\')">视频</button>' +
+      '<button onclick="event.stopPropagation();aiCallConfirm(\'' + c.id + '\',\'voice\')">语音</button>' +
+      '<button onclick="event.stopPropagation();aiCallConfirm(\'' + c.id + '\',\'video\')">视频</button>' +
       '</div></div>';
   }).join('');
 

@@ -1405,3 +1405,197 @@ ul { list-style: none; }
   z-index: 5;
   text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
+
+/* ============================================
+   AI 角色通话（微信视频风格，对齐真实云念AI）
+   ============================================ */
+
+/* 确认弹窗 */
+.aic-modal-mask {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 32px;
+}
+.aic-confirm-card {
+  width: 100%; max-width: 320px;
+  background: #fff; border-radius: 20px;
+  padding: 24px 20px 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.aic-confirm-title { font-size: 18px; font-weight: 700; color: #1a1a1a; text-align: left; }
+.aic-confirm-body { font-size: 14px; color: #444; line-height: 1.75; text-align: left; }
+.aic-btn-red {
+  width: 100%; padding: 13px 0; border: none; border-radius: 12px;
+  background: #c53d3d; color: #fff; font-size: 16px; font-weight: 600;
+  cursor: pointer;
+}
+.aic-btn-red:active { opacity: 0.85; }
+.aic-btn-cancel {
+  width: 100%; padding: 13px 0; border-radius: 12px;
+  background: #fff; border: 1px solid #ddd; color: #333;
+  font-size: 16px; cursor: pointer;
+}
+
+/* 全屏通话界面 */
+.ai-call-screen {
+  position: fixed; top: 0; bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 100%; max-width: 430px;
+  z-index: 250;
+  background: radial-gradient(120% 90% at 50% 30%, #2b241f 0%, #17120e 60%, #0b0908 100%);
+  overflow: hidden;
+  color: #fff;
+}
+.aic-connected { position: absolute; inset: 0; }
+.aic-full-photo {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  animation: aicKenburns 26s ease-in-out infinite alternate;
+}
+.aic-full-photo.speaking { animation: aicKenburns 26s ease-in-out infinite alternate, aicPulse 1.6s ease-in-out infinite; }
+@keyframes aicKenburns {
+  0%   { transform: scale(1) translate(0, 0); }
+  50%  { transform: scale(1.08) translate(1.5%, -2%); }
+  100% { transform: scale(1.03) translate(-1.5%, 1.5%); }
+}
+@keyframes aicPulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.1); }
+}
+
+/* 右上角自己小窗 */
+.aic-pip {
+  position: absolute; top: 16px; right: 12px;
+  width: 96px; height: 132px;
+  border-radius: 14px; overflow: hidden;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  z-index: 5;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.aic-pip video { width: 100%; height: 100%; object-fit: cover; }
+.aic-pip-hint {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.4);
+}
+.aic-pip-hint svg { width: 26px; height: 26px; }
+
+/* 我说的话 / 字幕 */
+.aic-user-bubble {
+  position: absolute; left: 16px; right: 110px; bottom: 235px;
+  z-index: 6;
+  align-self: flex-start;
+  background: rgba(255,255,255,0.14);
+  backdrop-filter: blur(8px);
+  border-radius: 14px 14px 14px 4px;
+  padding: 9px 13px;
+  font-size: 13px; color: #fff; text-align: left;
+}
+.aic-subtitle {
+  position: absolute; left: 50%; bottom: 235px;
+  transform: translateX(-50%);
+  z-index: 6;
+  max-width: 86%;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 9px 14px;
+  font-size: 14px; line-height: 1.6; color: #fff; text-align: center;
+}
+.aic-chips {
+  position: absolute; left: 0; right: 0; bottom: 290px;
+  z-index: 7;
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  padding: 0 16px;
+}
+.aic-chips button {
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff; font-size: 13px;
+  padding: 8px 14px; border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.aic-chips button:active { background: rgba(255,255,255,0.28); }
+
+/* 呼叫阶段 */
+.aic-phase {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: 18vh;
+}
+.aic-avatar {
+  width: 108px; height: 108px;
+  border-radius: 22px; overflow: hidden;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  margin-bottom: 18px;
+}
+.aic-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.aic-avatar-letter {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; font-weight: 700; color: rgba(255,255,255,0.85);
+}
+.aic-name { font-size: 22px; font-weight: 700; margin-bottom: 14px; }
+.aic-phase-main { font-size: 14px; color: rgba(255,255,255,0.75); }
+.aic-phase-sub { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 6px; }
+
+/* 底部控制区 */
+.aic-bottom {
+  position: absolute; left: 0; right: 0; bottom: 74px;
+  z-index: 8;
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+}
+.aic-ctls { display: flex; gap: 34px; }
+.aic-ctl { display: flex; flex-direction: column; align-items: center; gap: 7px; cursor: pointer; }
+.aic-ctl-circle {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(60,60,60,0.55);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  transition: background 0.2s;
+}
+.aic-ctl-circle svg { width: 22px; height: 22px; }
+.aic-ctl.off .aic-ctl-circle { background: rgba(255,255,255,0.85); color: #222; }
+.aic-ctl.off .aic-ctl-circle .slash { display: block; }
+.aic-ctl-circle .slash { display: none; }
+.aic-ctl-label { font-size: 11px; color: rgba(255,255,255,0.85); }
+.aic-hangup-wrap { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.aic-hangup {
+  width: 62px; height: 62px; border-radius: 50%;
+  border: none; background: #e34d4d; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(227,77,77,0.4);
+}
+.aic-hangup:active { transform: scale(0.94); }
+.aic-hangup svg { width: 26px; height: 26px; transform: rotate(135deg); }
+.aic-hangup-label { font-size: 11px; color: rgba(255,255,255,0.85); }
+
+/* 底部状态条 */
+.aic-statusbar {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  z-index: 8;
+  height: 44px;
+  display: flex; align-items: center;
+  padding: 0 14px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.aic-timer { font-size: 13px; color: rgba(255,255,255,0.9); font-variant-numeric: tabular-nums; }
+.aic-badge {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  font-size: 13px; color: rgba(255,255,255,0.85);
+}
+.aic-info {
+  margin-left: auto;
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.6);
+  background: transparent; color: rgba(255,255,255,0.75);
+  font-size: 12px; font-style: italic; font-family: serif;
+  cursor: pointer;
+}
