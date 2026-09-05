@@ -243,15 +243,16 @@ function handlePhotoSelect(input) {
 function handleAudioSelect(input) {
   const file = input.files && input.files[0];
   if (!file) return;
-  const okType = /^audio\/(mpeg|mp4|x-m4a|wav|x-wav)$/.test(file.type) ||
-                 /\.(mp3|m4a|wav)$/i.test(file.name);
+  // 宽松校验：audio/* MIME 或常见音频扩展名都放行（手机文件管理器的 MIME 标注不统一）
+  const okType = (file.type && file.type.indexOf('audio') === 0) ||
+                 /\.(mp3|m4a|wav|aac|ogg|amr|flac|wma|caf)$/i.test(file.name);
   if (!okType) {
-    showToast('仅支持 MP3 / M4A / WAV 音频');
+    showToast('请选择音频文件（MP3 / M4A / WAV 等）');
     input.value = '';
     return;
   }
-  if (file.size > 10 * 1024 * 1024) {
-    showToast('音频超过 10MB，请压缩后重试');
+  if (file.size > 20 * 1024 * 1024) {
+    showToast('音频超过 20MB，请压缩后重试');
     input.value = '';
     return;
   }
