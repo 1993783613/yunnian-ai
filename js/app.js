@@ -23,6 +23,7 @@ function navigate(pageId) {
     if (pageId === 'call') trtcEnterCall();
     if (pageId === 'landing') generateStars();
     if (pageId === 'library') renderMyCharacters();
+    if (pageId === 'shop') renderShop();
   }
 }
 
@@ -474,6 +475,120 @@ function memDelete(time) {
   const list = memGetAll(memCharId).filter(m => m.time !== time);
   try { localStorage.setItem(memKey(memCharId), JSON.stringify(list)); } catch (e) {}
   memRender();
+}
+
+// ===== 商城（商品来自后台配置 siteData.products） =====
+function renderShop() {
+  const grid = document.getElementById('shopGrid');
+  if (!grid) return;
+  siteData = loadSiteData();
+  const list = siteData.products || [];
+  if (!list.length) {
+    grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px 0;">商品即将上架</div>';
+    return;
+  }
+  grid.innerHTML = list.map(p =>
+    '<div class="shop-card" onclick="openProduct(\'' + p.id + '\')">' +
+      '<div class="shop-thumb">' +
+        '<svg viewBox="0 0 24 24" fill="#fff" class="shop-play"><path d="M8 5v14l11-7z"/></svg>' +
+        (p.img
+          ? '<img src="' + p.img + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">'
+          : '<div class="shop-thumb-emoji">' + escapeHtml(p.emoji || '🎁') + '</div>') +
+      '</div>' +
+      '<div class="shop-info">' +
+        '<div class="shop-name">' + escapeHtml(p.name) + '</div>' +
+        '<div class="shop-meta"><span class="shop-price">¥' + escapeHtml(p.price) + '</span><span class="shop-sold">已售 ' + escapeHtml(p.sold || 0) + '</span></div>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+}
+
+// ===== 通用弹窗：商品详情 / 客服 / 合作 =====
+function showGenModal(html) {
+  document.getElementById('genModalBody').innerHTML = html;
+  document.getElementById('genModalMask').style.display = 'flex';
+}
+function closeGenModal() {
+  document.getElementById('genModalMask').style.display = 'none';
+}
+
+function openProduct(id) {
+  const p = (siteData.products || []).find(x => String(x.id) === String(id));
+  if (!p) return;
+  const detail = String(p.detail || '').split('\n').filter(l => l.trim()).map(l =>
+    '<p class="pd-line">' + (l.trim().indexOf('·') === 0 ? '<span class="pd-dot">' + escapeHtml(l.trim()) + '</span>' : escapeHtml(l.trim())) + '</p>'
+  ).join('');
+  showGenModal(
+    '<div class="pd-thumb">' +
+      (p.img ? '<img src="' + p.img + '" alt="">' : '<div class="pd-emoji">' + escapeHtml(p.emoji || '🎁') + '</div>') +
+    '</div>' +
+    '<div class="pd-body">' +
+      '<div class="pd-name">' + escapeHtml(p.name) + '</div>' +
+      '<div class="pd-meta"><span class="pd-price">¥' + escapeHtml(p.price) + '</span><span class="pd-sold">已售 ' + escapeHtml(p.sold || 0) + '</span></div>' +
+      '<div class="pd-brief">' + escapeHtml(p.brief || '') + '</div>' +
+      '<div class="pd-detail">' + (detail || '<p class="pd-line">详情介绍coming soon</p>') + '</div>' +
+      '<button class="btn btn-primary pd-buy" onclick="buyProduct(\'' + p.id + '\')">立即购买 · ¥' + escapeHtml(p.price) + '</button>' +
+    '</div>'
+  );
+}
+
+function buyProduct(id) {
+  const p = (siteData.products || []).find(x => String(x.id) === String(id));
+  if (!p) return;
+  const acc = (JSON.parse(localStorage.getItem('yn_auth_remember') || 'null') || {}).account || '（未登录）';
+  addOrder({ type: '商城', title: '商城-' + p.name, amount: String(p.price), credits: 0, account: acc, channel: '微信支付' });
+  p.sold = (parseInt(p.sold, 10) || 0) + 1;
+  persistSiteData();
+  renderShop();
+  closeGenModal();
+  showToast('购买成功（演示）：「' + p.name + '」已生成订单');
+}
+
+// ===== 客服咨询 / 合作联系（二维码与图片由后台上传配置） =====
+function openServiceModal() {
+  siteData = loadSiteData();
+  const qr = siteData.serviceQr;
+  showGenModal(
+    '<div class="gm-center">' +
+      '<div class="gm-title">客服咨询</div>' +
+      '<div class="gm-qr-box">' +
+        (qr ? '<img src="' + qr + '" alt="客服二维码">' : '<div class="gm-qr-empty">管理员还未上传客服二维码<br><small>在 admin.html 后台「客服设置」上传后显示</small></div>') +
+      '</div>' +
+      '<div class="gm-text">' + escapeHtml(siteData.serviceText || '') + '</div>' +
+    '</div>'
+  );
+}
+
+function openCoopModal() {
+  siteData = loadSiteData();
+  const img = siteData.coopImg;
+  showGenModal(
+    '<div class="gm-center">' +
+      '<div class="gm-title">合作联系</div>' +
+      '<div class="gm-qr-box">' +
+        (img ? '<img src="' + img + '" alt="合作联系方式">' : '<div class="gm-qr-empty">管理员还未上传合作图片<br><small>在 admin.html 后台「合作设置」上传后显示</small></div>') +
+      '</div>' +
+      '<div class="gm-text">' + escapeHtml(siteData.coopText || '') + '</div>' +
+    '</div>'
+  );
+}
+
+// ===== 充值（生成订单记录，演示支付） =====
+function confirmRecharge(btn) {
+  const card = document.querySelector('#page-recharge .package-card.selected');
+  const price = card ? card.querySelector('.price').textContent.trim() : '9.9';
+  const name = card ? card.querySelector('.package-name').textContent.trim() : '新用户专享';
+  const desc = card ? card.querySelector('.package-desc').textContent.trim() : '';
+  const credits = parseInt((desc.match(/\d+/) || ['0'])[0], 10);
+  const acc = (JSON.parse(localStorage.getItem('yn_auth_remember') || 'null') || {}).account || '（未登录）';
+  btn.disabled = true;
+  btn.textContent = '正在拉起微信支付…';
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = '确认微信支付 · ¥' + price;
+    addOrder({ type: '充值', title: name, amount: price, credits: credits, account: acc, channel: '微信支付' });
+    showToast('支付成功（演示）：' + name + ' ¥' + price + ' 已生成订单');
+  }, 900);
 }
 
 function escapeHtml(s) {
