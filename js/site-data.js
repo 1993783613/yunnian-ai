@@ -26,6 +26,13 @@ const DEFAULT_SITE_DATA = {
   serviceText: '工作时间 9:00 - 21:00，添加客服微信一对一解答',
   coopImg: '',     // 合作联系图片（base64，后台上传）
   coopText: '商务合作请扫码添加微信，或发送邮件至 biz@chaojinian.com',
+  // 念想值会员中心充值套餐（后台上传自定义价格/权益）
+  packages: [
+    { id: 'pk1', name: '新用户专享', desc: '50 念想值 · 首次充值', credits: 50, price: '9.9', period: '一次性', tag: '' },
+    { id: 'pk2', name: '陪伴月卡', desc: '200 念想值 · 含3次音色克隆', credits: 200, price: '68', period: '/ 月', tag: '推荐' },
+    { id: 'pk3', name: '家庭季卡', desc: '800 念想值 · 不限音色克隆', credits: 800, price: '198', period: '/ 季', tag: '' },
+    { id: 'pk4', name: '年度畅享', desc: '5000 念想值 · VIP 全功能', credits: 5000, price: '598', period: '/ 年', tag: '' }
+  ],
   agents: []       // 代理：{id, name, account, rate, createdAt}
 };
 
@@ -35,6 +42,7 @@ function loadSiteData() {
     const saved = JSON.parse(localStorage.getItem(SITE_DATA_KEY) || '{}');
     const d = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SITE_DATA)), saved);
     if (!Array.isArray(d.products)) d.products = JSON.parse(JSON.stringify(DEFAULT_SITE_DATA.products));
+    if (!Array.isArray(d.packages)) d.packages = JSON.parse(JSON.stringify(DEFAULT_SITE_DATA.packages));
     if (!Array.isArray(d.agents)) d.agents = [];
     return d;
   } catch (e) {
@@ -130,6 +138,7 @@ function addOrder(o) {
   if (!localStorage.getItem(SITE_DATA_KEY)) {
     saveSiteData({
       products: DEFAULT_SITE_DATA.products,
+      packages: DEFAULT_SITE_DATA.packages,
       serviceQr: '', serviceText: DEFAULT_SITE_DATA.serviceText,
       coopImg: '', coopText: DEFAULT_SITE_DATA.coopText,
       agents: [

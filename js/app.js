@@ -24,6 +24,7 @@ function navigate(pageId) {
     if (pageId === 'landing') generateStars();
     if (pageId === 'library') renderMyCharacters();
     if (pageId === 'shop') renderShop();
+    if (pageId === 'recharge') renderPackages();
     if (pageId === 'agent') renderAgentCenter();
   }
 }
@@ -778,3 +779,41 @@ function fallbackCopy(text, done) {
   try { document.execCommand('copy'); done(); } catch (e) { showToast('复制失败，请长按链接手动复制'); }
   document.body.removeChild(ta);
 }
+
+// ===== 念想值会员中心：充值套餐（后台可配置价格/权益） =====
+function renderPackages() {
+  const list = document.getElementById('packageList');
+  if (!list) return;
+  siteData = loadSiteData();   // 每次进入都读最新后台配置
+  const packages = siteData.packages || [];
+  if (!packages.length) {
+    list.innerHTML = '<div style="padding: 32px 16px; text-align: center; font-size: 13px; color: var(--text-muted);">套餐暂未配置，请联系管理员</div>';
+    return;
+  }
+  list.innerHTML = packages.map((pk, i) =>
+    '<div class="package-card' + (i === 0 ? ' selected' : '') + '" onclick="selectPackage(this)">' +
+      (pk.tag ? '<div class="package-tag">' + escapeHtml(pk.tag) + '</div>' : '') +
+      '<div class="package-info"><div class="package-name">' + escapeHtml(pk.name || '') + '</div>' +
+      '<div class="package-desc">' + escapeHtml(pk.desc || '') + '</div></div>' +
+      '<div class="package-price"><div class="price">' + escapeHtml(pk.price || '0') + '</div>' +
+      '<div class="period">' + escapeHtml(pk.period || '一次性') + '</div></div>' +
+    '</div>'
+  ).join('');
+  // 底部支付按钮金额同步为当前选中套餐
+  const payBtn = document.querySelector('#page-recharge .submit-bar .btn-primary');
+  if (payBtn) payBtn.textContent = '确认微信支付 · ¥' + packages[0].price;
+}
+
+// ===== 后台数据变更实时同步（同浏览器多标签页：storage 事件） =====
+window.addEventListener('storage', function (e) {
+  if (e.key !== SITE_DATA_KEY) return;
+  siteData = loadSiteData();
+  // 重渲染当前可见页面里依赖后台配置的部分
+  const active = document.querySelector('.page.active');
+  if (!active) return;
+  const id = active.id;
+  if (id === 'page-shop') renderShop();
+  if (id === 'page-recharge') renderPackages();
+  if (id === 'page-agent') renderAgentCenter();
+  if (id === 'page-profile') { /* 客服/合作弹窗每次打开都重新读取，无需处理 */ }
+});

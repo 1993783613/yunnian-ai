@@ -102,6 +102,7 @@
     <button class="nav-item" data-tab="orders" onclick="switchTab('orders',this)">🧾 订单记录</button>
     <button class="nav-item" data-tab="agents" onclick="switchTab('agents',this)">💰 代理分成</button>
     <button class="nav-item" data-tab="products" onclick="switchTab('products',this)">🛍️ 商品管理</button>
+    <button class="nav-item" data-tab="packages" onclick="switchTab('packages',this)">💎 套餐价格</button>
     <button class="nav-item" data-tab="contact" onclick="switchTab('contact',this)">📮 客服 / 合作</button>
     <button class="nav-item" data-tab="data" onclick="switchTab('data',this)">⚙️ 数据管理</button>
   </div>
@@ -116,7 +117,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="./js/site-data.js?v=20260906f"></script>
+<script src="./js/site-data.js?v=20260906i"></script>
 <script>
 /* ===== 登录 ===== */
 function adminPass() { return localStorage.getItem('yn_admin_pass') || 'admin888'; }
@@ -154,7 +155,7 @@ function fmtTime(ts) {
 }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
 
-const TAB_TITLES = { dash: '数据概览', users: '会员管理', orders: '订单记录', agents: '代理分成', products: '商品管理', contact: '客服 / 合作设置', data: '数据管理' };
+const TAB_TITLES = { dash: '数据概览', users: '会员管理', orders: '订单记录', agents: '代理分成', products: '商品管理', packages: '充值套餐价格', contact: '客服 / 合作设置', data: '数据管理' };
 function switchTab(tab, btn) {
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
@@ -165,6 +166,7 @@ function switchTab(tab, btn) {
   if (tab === 'orders') renderOrders(c);
   if (tab === 'agents') renderAgents(c);
   if (tab === 'products') renderProducts(c);
+  if (tab === 'packages') renderPkgs(c);
   if (tab === 'contact') renderContact(c);
   if (tab === 'data') renderDataTab(c);
 }
@@ -466,6 +468,63 @@ function delProduct(id) {
   persistSiteData();
   toast('已删除');
   renderProducts(document.getElementById('tabContent'));
+}
+
+/* ===== 充值套餐价格 ===== */
+function renderPkgs(c) {
+  siteData = loadSiteData();
+  const list = siteData.packages || [];
+  c.innerHTML =
+    '<div class="card"><div class="toolbar"><button class="btn btn-primary btn-sm" onclick="addPkg()">＋ 新增套餐</button>' +
+    '<span style="font-size:12px;color:#9A94B0;margin-left:10px;">改动保存后，前台「念想值会员中心」刷新即见</span></div>' +
+    '<div class="table-wrap"><table><thead><tr><th>套餐名</th><th>权益描述</th><th>念想值</th><th>价格(¥)</th><th>周期</th><th>角标</th><th>操作</th></tr></thead><tbody>' +
+    (list.length ? list.map(pk =>
+      '<tr><td><b>' + esc(pk.name) + '</b></td><td>' + esc(pk.desc) + '</td>' +
+      '<td>' + esc(pk.credits) + '</td><td><b style="color:#7C6AF2">¥' + esc(pk.price) + '</b></td>' +
+      '<td>' + esc(pk.period || '一次性') + '</td>' +
+      '<td>' + (pk.tag ? '<span class="tag tag-ok">' + esc(pk.tag) + '</span>' : '—') + '</td>' +
+      '<td><button class="btn btn-light btn-sm" onclick="editPkg(\'' + pk.id + '\')">编辑</button> ' +
+      '<button class="btn btn-danger btn-sm" onclick="delPkg(\'' + pk.id + '\')">删除</button></td></tr>'
+    ).join('') : '<tr><td colspan="7"><div class="empty">暂无套餐，点上方按钮新增</div></td></tr>') +
+    '</tbody></table></div></div>';
+}
+function addPkg() {
+  siteData = loadSiteData();
+  const name = prompt('套餐名称（如：陪伴月卡）'); if (!name) return;
+  const desc = prompt('权益描述（如：200 念想值 · 含3次音色克隆）', '') || '';
+  const credits = parseInt(prompt('念想值数量（数字）', '50'), 10);
+  if (!(credits > 0)) { toast('念想值需为正整数'); return; }
+  const price = prompt('售价（元，如 9.9）', '9.9');
+  if (!price || !(parseFloat(price) >= 0)) { toast('价格无效'); return; }
+  const period = prompt('周期文案（一次性 / 月 / 季 / 年）', '一次性') || '一次性';
+  const tag = prompt('角标文案（如：推荐，留空则不显示）', '') || '';
+  siteData.packages.push({ id: 'pk' + Date.now(), name: name, desc: desc, credits: credits, price: price, period: period, tag: tag });
+  persistSiteData();
+  toast('套餐已新增，前台刷新即见');
+  renderPkgs(document.getElementById('tabContent'));
+}
+function editPkg(id) {
+  siteData = loadSiteData();
+  const pk = (siteData.packages || []).find(x => x.id === id);
+  if (!pk) return;
+  const name = prompt('套餐名称', pk.name); if (name === null) return;
+  const desc = prompt('权益描述', pk.desc); if (desc === null) return;
+  const credits = prompt('念想值数量', String(pk.credits)); if (credits === null) return;
+  const price = prompt('售价（元）', String(pk.price)); if (price === null) return;
+  const period = prompt('周期文案', pk.period || '一次性'); if (period === null) return;
+  const tag = prompt('角标文案（留空不显示）', pk.tag || ''); if (tag === null) return;
+  Object.assign(pk, { name: name || pk.name, desc: desc, credits: parseInt(credits, 10) || pk.credits, price: price || pk.price, period: period, tag: tag });
+  persistSiteData();
+  toast('套餐已保存，前台刷新即见');
+  renderPkgs(document.getElementById('tabContent'));
+}
+function delPkg(id) {
+  if (!confirm('确定删除该套餐？')) return;
+  siteData = loadSiteData();
+  siteData.packages = (siteData.packages || []).filter(x => x.id !== id);
+  persistSiteData();
+  toast('已删除');
+  renderPkgs(document.getElementById('tabContent'));
 }
 
 /* ===== 客服 / 合作设置 ===== */
