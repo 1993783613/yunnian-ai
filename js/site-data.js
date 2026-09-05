@@ -133,10 +133,54 @@ function addOrder(o) {
       serviceQr: '', serviceText: DEFAULT_SITE_DATA.serviceText,
       coopImg: '', coopText: DEFAULT_SITE_DATA.coopText,
       agents: [
-        { id: 'a1', name: '张经理', account: '13800001111', rate: 20, createdAt: Date.now() - 30 * 86400000 },
-        { id: 'a2', name: '李代理', account: '15100002222', rate: 15, createdAt: Date.now() - 15 * 86400000 }
+        { id: 'a1', name: '张经理', account: '13800001111', pass: '123456', rate: 20, createdAt: Date.now() - 30 * 86400000 },
+        { id: 'a2', name: '李代理', account: '15100002222', pass: '123456', rate: 15, createdAt: Date.now() - 15 * 86400000 }
       ]
     });
     siteData = loadSiteData();
   }
 })();
+
+// ===== 超级代理 =====
+// 邀请来源：消费者通过 ?agent=代理账号 的链接进入时记录，注册/下单时自动绑定到该代理
+function getAgentRef() {
+  try { return localStorage.getItem('yn_agent_ref') || ''; } catch (e) { return ''; }
+}
+function setAgentRef(account) {
+  try { localStorage.setItem('yn_agent_ref', account); } catch (e) {}
+}
+function getAgentByAccount(acc) {
+  if (!acc) return null;
+  return (loadSiteData().agents || []).find(a => a.account === acc) || null;
+}
+// 确保账号在会员表中有记录（注册/下单时调用），并自动完成邀请归因绑定
+function upsertUser(account, nickname) {
+  if (!account || account === '（未登录）') return null;
+  const users = getUsers();
+  let u = users.find(x => x.account === account);
+  if (!u) {
+    u = { id: 'u' + Date.now() + Math.floor(Math.random() * 1000), account: account, nickname: nickname || '', balance: 0, status: 'active', agentId: '', createdAt: Date.now() };
+    users.unshift(u);
+  }
+  if (!u.agentId) {
+    const refAcc = getAgentRef();
+    if (refAcc && refAcc !== account) {
+      const ag = getAgentByAccount(refAcc);
+      if (ag) u.agentId = ag.id;
+    }
+  }
+  saveUsers(users);
+  return u;
+}
+// 代理数据统计：旗下会员 / 已支付订单 / 会员消费 / 佣金（= 消费 × 后台设置的比例）
+function getAgentStats(agentId) {
+  const site = loadSiteData();
+  const agent = (site.agents || []).find(a => a.id === agentId);
+  const rate = agent ? (Number(agent.rate) || 0) : 0;
+  const members = getUsers().filter(u => u.agentId === agentId);
+  const accounts = members.map(u => u.account);
+  const orders = getOrders().filter(o => o.status === 'paid' && accounts.indexOf(o.account) > -1)
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const consume = orders.reduce((s, o) => s + (parseFloat(o.amount) || 0), 0);
+  return { agent: agent, rate: rate, members: members, orders: orders, consume: consume, commission: consume * rate / 100 };
+}

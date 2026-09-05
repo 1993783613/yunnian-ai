@@ -336,9 +336,10 @@ function addAgent() {
   const account = prompt('代理账号（手机/微信）'); if (!account) return;
   const rate = parseInt(prompt('分成比例（%），如 20', '20'), 10);
   if (!(rate > 0 && rate <= 100)) { toast('分成比例需为 1-100'); return; }
-  siteData.agents.push({ id: 'a' + Date.now(), name: name, account: account, rate: rate, createdAt: Date.now() });
+  const pass = prompt('设置代理登录密码（代理用它登录前台「超级代理中心」）', '123456') || '123456';
+  siteData.agents.push({ id: 'a' + Date.now(), name: name, account: account, pass: pass, rate: rate, createdAt: Date.now() });
   persistSiteData();
-  toast('代理已新增');
+  toast('代理已新增，账号 ' + account + ' / 密码 ' + pass);
   renderAgents(document.getElementById('tabContent'));
 }
 function editAgent(id) {
@@ -347,8 +348,10 @@ function editAgent(id) {
   const rate = parseInt(prompt('修改「' + a.name + '」的分成比例（%）', String(a.rate)), 10);
   if (!(rate > 0 && rate <= 100)) return;
   a.rate = rate;
+  const pass = prompt('重置登录密码（点「取消」或留空则不修改）', '');
+  if (pass) a.pass = pass;
   persistSiteData();
-  toast('分成比例已更新');
+  toast('已保存' + (pass ? '，新密码 ' + pass : ''));
   renderAgents(document.getElementById('tabContent'));
 }
 function bindMember(agentId) {

@@ -9,7 +9,7 @@
   <meta name="keywords" content="超级念,AI数字人,实时通话,语音通话,视频通话,音色克隆,数字人创建,视频商城" data-page-node-id="gyZOocPQXlLwkDcsXjxqAR">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%237C6AF2'/%3E%3Cstop offset='100%25' stop-color='%235A48D6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='38' fill='url(%23g)'/%3E%3Ctext x='50' y='64' font-size='44' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3E%E5%BF%B5%3C/text%3E%3C/svg%3E" data-page-node-id="Ki9tISPeEILzCFiQcLUOQE">
   <title>超级念</title>
-  <link rel="stylesheet" href="./css/style.css?v=20260906g" data-page-node-id="TiK9KJdu7FkTLHAlzTdBUs">
+  <link rel="stylesheet" href="./css/style.css?v=20260906h" data-page-node-id="TiK9KJdu7FkTLHAlzTdBUs">
 </head>
 <body data-page-node-id="aoiH7Yz4btrgRcOZRnTB8t">
 
@@ -225,6 +225,61 @@
       </div>
       <div class="mem-tip">TA 会记住这里的内容。视频聊天时提到相关话题，TA 都能想起来；聊过天没删除的内容也会自动记到这里。</div>
       <div class="mem-list" id="memList"></div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- 页面 3.7: 超级代理中心 -->
+  <!-- ============================================ -->
+  <div class="page" id="page-agent">
+    <div class="topbar">
+      <button class="topbar-back" onclick="navigate('profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>返回
+      </button>
+      <div class="topbar-title">超级代理</div>
+      <button class="topbar-action" id="agentLogoutBtn" style="display:none" onclick="agentLogout()">退出</button>
+    </div>
+    <div class="page-content">
+      <!-- 未登录：代理登录 -->
+      <div id="agentLoginView">
+        <div class="ag-hero">
+          <div class="ag-hero-emoji">🤝</div>
+          <div class="ag-hero-title">超级代理中心</div>
+          <div class="ag-hero-sub">邀请好友使用超级念，TA 的每笔消费你都能拿分成</div>
+        </div>
+        <div class="ag-form">
+          <input id="agentAccount" type="text" placeholder="代理账号（管理员开通时提供）">
+          <input id="agentPass" type="password" placeholder="代理密码">
+          <button class="btn btn-primary ag-login-btn" onclick="agentLogin()">登录代理中心</button>
+          <div class="ag-tip">还没有代理账号？请联系管理员开通</div>
+        </div>
+      </div>
+      <!-- 已登录：代理中心 -->
+      <div id="agentCenterView" style="display:none">
+        <div class="ag-stat-card">
+          <div class="ag-stat-head">
+            <span class="ag-name" id="agName">—</span>
+            <span class="ag-rate" id="agRate">分成 0%</span>
+          </div>
+          <div class="ag-commission"><span class="ag-c-num" id="agCommission">0.0</span><span class="ag-c-unit">累计佣金（元）</span></div>
+          <div class="ag-stat-row">
+            <div><b id="agMemberCount">0</b><span>邀请会员</span></div>
+            <div><b id="agOrderCount">0</b><span>消费订单</span></div>
+            <div><b id="agConsume">¥0</b><span>会员消费</span></div>
+          </div>
+        </div>
+        <div class="ag-section"><span>邀请消费者</span></div>
+        <div class="ag-invite-card">
+          <div class="ag-qr-box"><img id="agQrImg" alt="邀请二维码"></div>
+          <div class="ag-link" id="agLinkText"></div>
+          <button class="btn btn-primary ag-copy-btn" onclick="copyAgentLink()">复制邀请链接</button>
+          <div class="ag-invite-tip">好友通过你的链接打开超级念并注册后，TA 的每笔充值和商城消费，都会按比例计入你的佣金（比例由管理员在后台设置）</div>
+        </div>
+        <div class="ag-section"><span>我的会员</span><span class="ag-sec-act" id="agMemberNote"></span></div>
+        <div class="ag-member-list" id="agMembers"></div>
+        <div class="ag-section"><span>佣金明细</span><span class="ag-sec-act" id="agOrderNote"></span></div>
+        <div class="ag-order-list" id="agOrders"></div>
+      </div>
     </div>
   </div>
 
@@ -626,7 +681,7 @@
           <div class="menu-text" data-page-node-id="sZVl4pXqGXZv6GBXUd93vR">个人音色管理</div>
           <div class="menu-arrow" data-page-node-id="MwLdOMIRDGvvptKq25OyZs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="v72n9SDI0p0lAs18Pyp9ke"><polyline points="9 18 15 12 9 6" data-page-node-id="C3uV8SH98UrB0RURA0zFG9"/></svg></div>
         </div>
-        <div class="menu-item" onclick="showToast('超级代理')" data-page-node-id="9BkGgg36tcpwanw7p1V9oi">
+        <div class="menu-item" onclick="navigate('agent')" data-page-node-id="9BkGgg36tcpwanw7p1V9oi">
           <div class="menu-icon" data-page-node-id="APiXo4eB0KiYeFIZvJS7aM"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="qvk6HhrpobZdwRynvAQQH4"><path d="M2 20h20" data-page-node-id="sxRKoIuFrHFVfObg0xz6Xp"/><path d="M4 20V10l4 3 4-7 4 7 4-3v10" data-page-node-id="tW8UNxWa59IKdg3NvBwicq"/></svg></div>
           <div class="menu-text" data-page-node-id="pXgx34j2OYWLAns3BF2zeI">超级代理</div>
           <div class="menu-arrow" data-page-node-id="KuY4USACTpyEKwmPZXe5fZ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" data-page-node-id="ewP0Lhsv0tzZSJl9DEBemm"><polyline points="9 18 15 12 9 6" data-page-node-id="fbZS7F7rejrNjNfTDKD5Kl"/></svg></div>
@@ -839,8 +894,8 @@
 <script src="https://trtc-1252463788.file.myqcloud.com/web/TRTCSDK/trtc-sdk-v5/latest/trtc.js"
         onerror="var s=document.createElement('script');s.src='https://unpkg.com/trtc-sdk-v5@latest/trtc.js';document.head.appendChild(s);"></script>
 <script src="./js/config.js?v=20260906b"></script>
-<script src="./js/site-data.js?v=20260906f"></script>
-<script src="./js/app.js?v=20260906g"></script>
+<script src="./js/site-data.js?v=20260906h"></script>
+<script src="./js/app.js?v=20260906h"></script>
 <script src="./js/trtc-call.js?v=20260906b"></script>
 <script src="./js/ai-call.js?v=20260906g"></script>
 </body>

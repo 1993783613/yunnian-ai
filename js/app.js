@@ -24,6 +24,7 @@ function navigate(pageId) {
     if (pageId === 'landing') generateStars();
     if (pageId === 'library') renderMyCharacters();
     if (pageId === 'shop') renderShop();
+    if (pageId === 'agent') renderAgentCenter();
   }
 }
 
@@ -581,6 +582,7 @@ function confirmRecharge(btn) {
   const desc = card ? card.querySelector('.package-desc').textContent.trim() : '';
   const credits = parseInt((desc.match(/\d+/) || ['0'])[0], 10);
   const acc = (JSON.parse(localStorage.getItem('yn_auth_remember') || 'null') || {}).account || '（未登录）';
+  try { upsertUser(acc); } catch (e) { /* 忽略 */ }
   btn.disabled = true;
   btn.textContent = '正在拉起微信支付…';
   setTimeout(() => {
@@ -661,3 +663,118 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch (e) { /* 忽略 */ }
 })();
+
+// ===== 捕获邀请参数 ?agent=代理账号（消费者通过代理链接进入时记录归因） =====
+(function captureAgentRef() {
+  try {
+    const m = location.search.match(/[?&]agent=([^&]+)/);
+    if (m) setAgentRef(decodeURIComponent(m[1]));
+  } catch (e) { /* 忽略 */ }
+})();
+
+// ===== 超级代理中心 =====
+function agentSession() {
+  try { return JSON.parse(localStorage.getItem('yn_agent_session') || 'null'); } catch (e) { return null; }
+}
+
+function agentLogin() {
+  const acc = (document.getElementById('agentAccount').value || '').trim();
+  const pass = document.getElementById('agentPass').value || '';
+  if (!acc) { showToast('请输入代理账号'); return; }
+  siteData = loadSiteData();
+  const ag = (siteData.agents || []).find(a => a.account === acc);
+  if (!ag) { showToast('代理账号不存在，请联系管理员开通'); return; }
+  if (String(ag.pass || '123456') !== pass) { showToast('密码错误'); return; }
+  try { localStorage.setItem('yn_agent_session', JSON.stringify({ id: ag.id, at: Date.now() })); } catch (e) {}
+  showToast('欢迎回来，' + ag.name);
+  renderAgentCenter();
+}
+
+function agentLogout() {
+  try { localStorage.removeItem('yn_agent_session'); } catch (e) {}
+  showToast('已退出代理中心');
+  renderAgentCenter();
+}
+
+function renderAgentCenter() {
+  const loginView = document.getElementById('agentLoginView');
+  const centerView = document.getElementById('agentCenterView');
+  const logoutBtn = document.getElementById('agentLogoutBtn');
+  if (!loginView || !centerView) return;
+  siteData = loadSiteData();
+  const s = agentSession();
+  const ag = s ? (siteData.agents || []).find(a => a.id === s.id) : null;
+  if (!ag) {
+    try { localStorage.removeItem('yn_agent_session'); } catch (e) {}
+    loginView.style.display = '';
+    centerView.style.display = 'none';
+    logoutBtn.style.display = 'none';
+    return;
+  }
+  loginView.style.display = 'none';
+  centerView.style.display = '';
+  logoutBtn.style.display = '';
+
+  const st = getAgentStats(ag.id);
+  document.getElementById('agName').textContent = ag.name;
+  document.getElementById('agRate').textContent = '分成 ' + st.rate + '%';
+  document.getElementById('agCommission').textContent = st.commission.toFixed(1);
+  document.getElementById('agMemberCount').textContent = st.members.length;
+  document.getElementById('agOrderCount').textContent = st.orders.length;
+  document.getElementById('agConsume').textContent = '¥' + st.consume.toFixed(1);
+
+  // 邀请链接 + 二维码
+  const link = location.origin + location.pathname + '?agent=' + encodeURIComponent(ag.account);
+  const linkEl = document.getElementById('agLinkText');
+  linkEl.textContent = link;
+  linkEl.setAttribute('data-link', link);
+  document.getElementById('agQrImg').src =
+    'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=6&data=' + encodeURIComponent(link);
+
+  // 我的会员
+  const membersEl = document.getElementById('agMembers');
+  document.getElementById('agMemberNote').textContent = st.members.length ? st.members.length + ' 人' : '';
+  membersEl.innerHTML = st.members.length ? st.members.map(u => {
+    const consume = getOrders().filter(o => o.account === u.account && o.status === 'paid')
+      .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0);
+    return '<div class="ag-member-item">' +
+      '<div class="ag-m-avatar">' + escapeHtml((u.nickname || u.account).slice(0, 1)) + '</div>' +
+      '<div class="ag-m-info"><div class="ag-m-name">' + escapeHtml(u.nickname || '未命名用户') + '</div>' +
+      '<div class="ag-m-meta">' + escapeHtml(u.account) + '</div></div>' +
+      '<div class="ag-m-consume">消费 ¥' + consume.toFixed(1) + '</div></div>';
+  }).join('') : '<div class="ag-empty">还没有会员，先去分享你的邀请链接吧</div>';
+
+  // 佣金明细
+  const ordersEl = document.getElementById('agOrders');
+  document.getElementById('agOrderNote').textContent = st.orders.length ? '按 ' + st.rate + '% 计佣' : '';
+  ordersEl.innerHTML = st.orders.length ? st.orders.map(o => {
+    const amt = parseFloat(o.amount) || 0;
+    const d = new Date(o.createdAt || Date.now());
+    const time = (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return '<div class="ag-order-item">' +
+      '<div class="ag-o-info"><div class="ag-o-title">' + escapeHtml(o.title || o.type) + '</div>' +
+      '<div class="ag-o-meta">' + escapeHtml(o.account) + ' · ' + time + '</div></div>' +
+      '<div class="ag-o-amt">+¥' + (amt * st.rate / 100).toFixed(2) + '</div></div>';
+  }).join('') : '<div class="ag-empty">暂无佣金记录，会员消费后自动计入</div>';
+}
+
+function copyAgentLink() {
+  const el = document.getElementById('agLinkText');
+  const link = el.getAttribute('data-link') || el.textContent;
+  const done = () => showToast('邀请链接已复制，快去分享吧');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(done).catch(() => fallbackCopy(link, done));
+  } else {
+    fallbackCopy(link, done);
+  }
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { showToast('复制失败，请长按链接手动复制'); }
+  document.body.removeChild(ta);
+}

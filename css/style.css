@@ -2494,3 +2494,46 @@ body {
 }
 .gm-qr-empty small { font-size: 11px; color: #B4AEC8; }
 .gm-text { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+
+/* ===== 19. 超级代理中心 ===== */
+.ag-hero { padding: 28px 20px 8px; text-align: center; }
+.ag-hero-emoji { font-size: 44px; }
+.ag-hero-title { margin-top: 8px; font-size: 20px; font-weight: 700; color: var(--text-main); }
+.ag-hero-sub { margin-top: 6px; font-size: 13px; color: var(--text-muted); }
+.ag-form { margin: 20px 20px 0; background: #fff; border-radius: 16px; padding: 20px 16px; box-shadow: 0 4px 20px rgba(124,106,242,0.08); }
+.ag-form input { width: 100%; box-sizing: border-box; margin-bottom: 12px; padding: 12px 14px; border: 1px solid #E6E1F5; border-radius: 12px; font-size: 14px; background: #FAF9FE; color: var(--text-main); }
+.ag-form input:focus { outline: none; border-color: var(--brand); background: #fff; }
+.ag-login-btn { width: 100%; }
+.ag-tip { margin-top: 12px; text-align: center; font-size: 12px; color: var(--text-muted); }
+.ag-stat-card { margin: 16px 20px 0; background: linear-gradient(135deg, #7C6AF2 0%, #9B7BFF 100%); border-radius: 18px; padding: 18px 16px; color: #fff; box-shadow: 0 10px 28px rgba(124,106,242,0.28); }
+.ag-stat-head { display: flex; justify-content: space-between; align-items: center; }
+.ag-name { font-size: 16px; font-weight: 700; }
+.ag-rate { font-size: 12px; background: rgba(255,255,255,0.22); padding: 3px 10px; border-radius: 999px; }
+.ag-commission { margin: 14px 0 12px; }
+.ag-c-num { font-size: 34px; font-weight: 800; letter-spacing: -1px; }
+.ag-c-unit { margin-left: 8px; font-size: 12px; opacity: 0.85; }
+.ag-stat-row { display: flex; border-top: 1px solid rgba(255,255,255,0.18); padding-top: 12px; }
+.ag-stat-row > div { flex: 1; text-align: center; display: flex; flex-direction: column; gap: 2px; }
+.ag-stat-row b { font-size: 16px; }
+.ag-stat-row span { font-size: 11px; opacity: 0.8; }
+.ag-section { display: flex; justify-content: space-between; align-items: center; margin: 20px 20px 8px; font-size: 15px; font-weight: 700; color: var(--text-main); }
+.ag-sec-act { font-size: 12px; font-weight: 500; color: var(--brand); }
+.ag-invite-card { margin: 0 20px; background: #fff; border-radius: 16px; padding: 18px 16px; text-align: center; box-shadow: 0 4px 20px rgba(124,106,242,0.08); }
+.ag-qr-box { width: 160px; height: 160px; margin: 0 auto 12px; border-radius: 12px; overflow: hidden; background: #F1EDFB; }
+.ag-qr-box img { width: 100%; height: 100%; object-fit: cover; }
+.ag-link { font-size: 11px; color: var(--text-muted); background: #F7F5FD; border-radius: 8px; padding: 8px 10px; word-break: break-all; margin-bottom: 12px; }
+.ag-copy-btn { width: 100%; }
+.ag-invite-tip { margin-top: 12px; font-size: 11px; color: var(--text-muted); line-height: 1.6; text-align: left; }
+.ag-member-list, .ag-order-list { margin: 0 20px; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(124,106,242,0.08); }
+.ag-member-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid #F3F0FC; }
+.ag-member-item:last-child, .ag-order-item:last-child { border-bottom: none; }
+.ag-m-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #7C6AF2, #9B7BFF); color: #fff; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ag-m-info { flex: 1; min-width: 0; }
+.ag-m-name { font-size: 14px; font-weight: 600; color: var(--text-main); }
+.ag-m-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.ag-m-consume { font-size: 12px; color: var(--brand); font-weight: 600; }
+.ag-order-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #F3F0FC; }
+.ag-o-title { font-size: 13px; font-weight: 600; color: var(--text-main); }
+.ag-o-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.ag-o-amt { font-size: 14px; font-weight: 700; color: #22B07D; white-space: nowrap; }
+.ag-empty { padding: 24px 16px; text-align: center; font-size: 12px; color: var(--text-muted); }
