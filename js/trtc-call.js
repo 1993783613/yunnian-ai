@@ -159,7 +159,7 @@ async function trtcJoinRoom(roomId, presetUserId) {
       sdkAppId: TRTC_CONFIG.sdkAppId,
       userId: trtcUserId,
       userSig: userSig,
-      scene: 'videoCall'
+      scene: 'rtc'
     });
 
     // 开启本地摄像头和麦克风
