@@ -170,34 +170,99 @@ function filterVoiceCategory(tabEl, category) {
   }
 }
 
-// 试听音色预览
-let voicePreviewTimer = null;
+// ===== 音色真实试听（浏览器语音合成，按角色调整音高/语速） =====
+const voiceProfiles = {
+  '慈祥爷爷': { pitch: 0.6, rate: 0.8,  line: '孩子啊，爷爷想你了，最近过得好不好？' },
+  '和蔼奶奶': { pitch: 0.85, rate: 0.85, line: '乖孙啊，奶奶给你留了好吃的，有空回来吃啊。' },
+  '温柔妈妈': { pitch: 1.1, rate: 0.95, line: '宝贝，妈妈在呢，别担心，好好照顾自己。' },
+  '沉稳爸爸': { pitch: 0.7, rate: 0.9,  line: '孩子，爸相信你，遇到什么事跟爸说。' },
+  '活泼少女': { pitch: 1.4, rate: 1.1,  line: '嗨～今天有没有想我呀？我可想你啦！' },
+  '阳光少年': { pitch: 1.0, rate: 1.05, line: '兄弟，走啊，打球去，就等你了！' },
+  '稚嫩童声': { pitch: 1.8, rate: 1.15, line: '妈妈妈妈，你快看，我画的画好不好看呀？' }
+};
+
+let voicePreviewUtterance = null;
+
 function playVoicePreview(btnEl, voiceName) {
-  // 停止上一个试听
-  if (voicePreviewTimer) {
-    clearTimeout(voicePreviewTimer);
-    document.querySelectorAll('.voice-option-play.playing').forEach(b => b.classList.remove('playing'));
+  if (!('speechSynthesis' in window)) {
+    showToast('当前浏览器不支持语音试听');
+    return;
   }
-  btnEl.classList.add('playing');
-  showToast(`正在试听「${voiceName}」…`);
-  // 模拟播放 3 秒
-  voicePreviewTimer = setTimeout(() => {
+  // 停止上一个试听
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.voice-option-play.playing').forEach(b => b.classList.remove('playing'));
+
+  const profile = voiceProfiles[voiceName] || { pitch: 1, rate: 1, line: '你好，我想你了。' };
+  const u = new SpeechSynthesisUtterance(profile.line);
+  u.lang = 'zh-CN';
+  u.pitch = profile.pitch;   // 0~2，越低越沧桑，越高越稚嫩
+  u.rate = profile.rate;     // 0.5~2，语速
+  u.volume = 1;
+  voicePreviewUtterance = u;
+
+  u.onstart = () => {
+    btnEl.classList.add('playing');
+    showToast(`正在试听「${voiceName}」…`);
+  };
+  u.onend = u.onerror = () => {
     btnEl.classList.remove('playing');
-    voicePreviewTimer = null;
-  }, 3000);
+    voicePreviewUtterance = null;
+  };
+  window.speechSynthesis.speak(u);
 }
 
-function handleUpload(el) {
-  // 模拟上传
-  showToast('选择文件中…');
-  setTimeout(() => {
-    el.classList.add('has-photo');
-    const hint = el.querySelector('.upload-hint');
-    const svg = el.querySelector('svg');
-    if (hint) hint.innerHTML = '已选择照片<br>点击重新选择';
-    if (svg) svg.style.display = 'none';
-    showToast('文件已选择');
-  }, 800);
+// ===== 照片真实选择与预览 =====
+function handlePhotoSelect(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (!/^image\/(png|jpeg|webp)$/.test(file.type)) {
+    showToast('仅支持 PNG / JPG / WebP 图片');
+    input.value = '';
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('照片超过 10MB，请压缩后重试');
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = document.getElementById('photoPreview');
+    img.src = e.target.result;
+    img.classList.remove('hidden');
+    document.getElementById('photoUploadIcon').style.display = 'none';
+    document.getElementById('photoUploadHint').innerHTML =
+      '已选择：' + file.name + '<br>点击可重新选择';
+    document.getElementById('photoUploadArea').classList.add('has-photo');
+    showToast('照片已就绪 ✓');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===== 音频真实选择与试听 =====
+function handleAudioSelect(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const okType = /^audio\/(mpeg|mp4|x-m4a|wav|x-wav)$/.test(file.type) ||
+                 /\.(mp3|m4a|wav)$/i.test(file.name);
+  if (!okType) {
+    showToast('仅支持 MP3 / M4A / WAV 音频');
+    input.value = '';
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('音频超过 10MB，请压缩后重试');
+    input.value = '';
+    return;
+  }
+  const player = document.getElementById('audioPreviewPlayer');
+  if (player.src) URL.revokeObjectURL(player.src);
+  player.src = URL.createObjectURL(file);
+  document.getElementById('audioFileName').textContent = '已选择：' + file.name;
+  document.getElementById('audioPreviewBox').classList.remove('hidden');
+  document.getElementById('audioUploadIcon').style.display = 'none';
+  document.getElementById('audioUploadHint').style.display = 'none';
+  showToast('音频已就绪，点击播放按钮试听 ✓');
 }
 
 function submitCreate() {

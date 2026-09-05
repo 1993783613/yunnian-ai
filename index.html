@@ -167,9 +167,11 @@
       <div class="create-section">
         <div class="create-section-title"><span class="num">1</span> 角色形象</div>
         <div class="create-section-desc">使用单人、正面、光线均匀的照片</div>
-        <div class="upload-area" onclick="handleUpload(this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <div class="upload-hint">上传照片<br>PNG / JPG · 不超过 10MB</div>
+        <div class="upload-area" id="photoUploadArea" onclick="document.getElementById('photoInput').click()">
+          <img id="photoPreview" class="upload-preview hidden" alt="照片预览">
+          <svg id="photoUploadIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div class="upload-hint" id="photoUploadHint">上传照片<br>PNG / JPG · 不超过 10MB</div>
+          <input type="file" id="photoInput" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="handlePhotoSelect(this)">
         </div>
       </div>
       <div class="create-section">
@@ -237,9 +239,15 @@
           <div class="voice-empty-hint hidden" id="voiceEmptyHint">该分类暂无可用音色</div>
         </div>
         <div id="voiceCustom" class="hidden">
-          <div class="upload-area" style="max-width: 100%; aspect-ratio: 16/9;" onclick="handleUpload(this)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-            <div class="upload-hint">选择录音文件<br>支持 MP3、M4A、16-bit WAV，10–60 秒且小于 10MB</div>
+          <div class="upload-area" style="max-width: 100%; aspect-ratio: auto; padding: 20px 16px;" onclick="document.getElementById('audioInput').click()">
+            <svg id="audioUploadIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            <div class="upload-hint" id="audioUploadHint">选择录音文件<br>支持 MP3、M4A、16-bit WAV，10–60 秒且小于 10MB</div>
+            <div id="audioPreviewBox" class="audio-preview-box hidden">
+              <div class="audio-file-name" id="audioFileName"></div>
+              <audio id="audioPreviewPlayer" controls style="width: 100%;"></audio>
+              <div class="audio-rechoose">点击可重新选择</div>
+            </div>
+            <input type="file" id="audioInput" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav" style="display:none" onchange="handleAudioSelect(this)">
           </div>
         </div>
       </div>
@@ -579,8 +587,8 @@
 <!-- 腾讯云 TRTC Web SDK（官方国内 CDN，失败时回退 unpkg） -->
 <script src="https://trtc-1252463788.file.myqcloud.com/web/TRTCSDK/trtc-sdk-v5/latest/trtc.js"
         onerror="var s=document.createElement('script');s.src='https://unpkg.com/trtc-sdk-v5@latest/trtc.js';document.head.appendChild(s);"></script>
-<script src="./js/config.js?v=20260905b"></script>
-<script src="./js/app.js?v=20260905b"></script>
-<script src="./js/trtc-call.js?v=20260905b"></script>
+<script src="./js/config.js?v=20260905c"></script>
+<script src="./js/app.js?v=20260905c"></script>
+<script src="./js/trtc-call.js?v=20260905c"></script>
 </body>
 </html>
