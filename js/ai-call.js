@@ -335,13 +335,10 @@ function aiCallConnect() {
   const greet = aiGreeting(aiCallChar);
   aiSpeak(greet);
 
-  // 开启"听"（支持的设备用语音识别；打字输入框和快捷回复始终可用）
+  // 开启"听"（支持的设备用语音识别；纯视频对话，无打字/快捷回复）
   if (aiSRSupported()) {
     aiStartRecognition();
   }
-  document.getElementById('aicChips').style.display = 'flex';
-  const tbx = document.getElementById('aicTextInput');
-  if (tbx) tbx.value = '';
 }
 
 // ===== AI 说话（真实模式=云驱动口型；演示模式=本地语音合成） =====
@@ -573,19 +570,6 @@ async function aiReplySmart(text) {
   return aiReply(text);
 }
 
-// ===== 打字对话：输入框发送（任何设备都可靠，不依赖语音识别） =====
-async function aiSendText() {
-  if (aiCallState !== 'connected') return;
-  const inp = document.getElementById('aicTextInput');
-  if (!inp) return;
-  const text = (inp.value || '').trim();
-  if (!text || inp.dataset.busy === '1') return;
-  inp.dataset.busy = '1';
-  inp.value = '';
-  aiChipReply(text);
-  inp.dataset.busy = '0';
-}
-
 /* ============================================
    微信式文字聊天页（角色卡「聊天」按钮进入）
    你打字发一句，TA 打字回一句；聊天记录持久化，
@@ -774,7 +758,6 @@ function aiHangup() {
   }
   aiSetCardCalling(false);
   document.getElementById('aiCallScreen').style.display = 'none';
-  document.getElementById('aicChips').style.display = 'none';
   document.getElementById('aicSubtitle').style.display = 'none';
   document.getElementById('aicUserBubble').style.display = 'none';
   navigate('library');
