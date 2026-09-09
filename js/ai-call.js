@@ -13,6 +13,7 @@
 let aiCallChar = null;          // 当前通话的角色
 let aiCallMode = 'video';       // 'video' | 'voice'
 let aiCallState = 'idle';       // idle | calling | connected | ended
+let aiMemUsed = null;           // 本次通话已提过的记忆（防重复"翻旧账"）
 let aiCallTimer = null;
 let aiCallSeconds = 0;
 const AI_CALL_LIMIT = 20 * 60;  // 可用时长 20:00（与确认弹窗一致）
@@ -90,6 +91,7 @@ async function aiCallGo() {
   document.getElementById('aicConfirmMask').style.display = 'none';
   if (!aiCallChar) return;
   aiUnlockSpeech();
+  aiMemUsed = new Set();   // 每次接通重置，已提过的记忆不再重复
   aiCallState = 'calling';
 
   // 卡片按钮变「呼叫中…」
@@ -348,10 +350,11 @@ function memMatch(text, mems) {
 // ===== AI 回复引擎（规则版 + 记忆库召回，正式版替换为大模型 API） =====
 function aiGreeting(char) {
   const rel = char.relation ? char.relation.replace(/^我的/, '') : '好孩子';
-  // 记忆库里有内容时，主动提起上次聊过的话题
+  // 记忆库里有内容时，接通必提上次聊过的话题（最新一条 = 上次对话内容）
   const mems = memGetAll(char.id).filter(m => m.source !== 'ai');
-  if (mems.length && Math.random() < 0.6) {
-    const m = mems[Math.floor(Math.random() * Math.min(3, mems.length))];
+  if (mems.length) {
+    const m = mems[0];
+    if (aiMemUsed) aiMemUsed.add(m.time);
     return '哎，' + rel + '来啦，' + (char.name || '') + '在呢。上次你跟我说「' + aiClip(m.text, 18) + '」，我一直记着呢，后来怎么样了？';
   }
   const pool = [
@@ -398,6 +401,13 @@ function aiReply(text) {
     '嗯嗯，我在听呢，你慢慢说，我最爱听你讲话了。',
     '好，都听你的。你那边一切都好吗？'
   ];
+  // ② 没命中规则时：翻记忆库里本次通话还没提过的旧话题，主动接话（像真亲人一样"翻旧账"）
+  const unmentioned = memGetAll(aiCallChar.id).filter(m => m.source !== 'ai' && !(aiMemUsed && aiMemUsed.has(m.time)));
+  if (unmentioned.length && Math.random() < 0.5) {
+    const m = unmentioned[Math.floor(Math.random() * Math.min(3, unmentioned.length))];
+    if (aiMemUsed) aiMemUsed.add(m.time);
+    return '对了，' + who + '还记着呢，你之前说过「' + aiClip(m.text, 20) + '」，后来怎么样了？';
+  }
   return fallback[Math.floor(Math.random() * fallback.length)];
 }
 

@@ -454,10 +454,24 @@ function memRender() {
     const d = new Date(m.time);
     const ts = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     const src = m.source === 'hand' ? '手写' : (m.source === 'ai' ? 'TA 说的' : '聊天记录');
+    // 编辑态：该条变为可编辑文本框
+    if (memEditingTime === m.time) {
+      return '<div class="mem-item editing">' +
+        '<div class="mem-item-top"><span class="mem-src hand">编辑记忆</span><span class="mem-time">' + ts + '</span></div>' +
+        '<textarea id="memEdit_' + m.time + '" class="mem-edit-ta" rows="3">' + escapeHtml(m.text) + '</textarea>' +
+        '<div class="mem-edit-btns">' +
+          '<button class="mem-edit-save" onclick="memEditSave(' + m.time + ')">保存</button>' +
+          '<button class="mem-del" onclick="memEditCancel()">取消</button>' +
+        '</div>' +
+      '</div>';
+    }
     return '<div class="mem-item">' +
       '<div class="mem-item-top"><span class="mem-src ' + (m.source === 'hand' ? 'hand' : 'auto') + '">' + src + '</span><span class="mem-time">' + ts + '</span></div>' +
       '<div class="mem-text">' + escapeHtml(m.text) + '</div>' +
-      '<button class="mem-del" onclick="memDelete(' + m.time + ')">删除</button>' +
+      '<div class="mem-item-btns">' +
+        '<button class="mem-edit" onclick="memEdit(' + m.time + ')">编辑</button>' +
+        '<button class="mem-del" onclick="memDelete(' + m.time + ')">删除</button>' +
+      '</div>' +
     '</div>';
   }).join('');
 }
@@ -476,6 +490,26 @@ function memSave() {
 function memDelete(time) {
   const list = memGetAll(memCharId).filter(m => m.time !== time);
   try { localStorage.setItem(memKey(memCharId), JSON.stringify(list)); } catch (e) {}
+  memRender();
+}
+
+// ===== 记忆编辑 =====
+let memEditingTime = 0;
+function memEdit(time) { memEditingTime = time; memRender(); }
+function memEditCancel() { memEditingTime = 0; memRender(); }
+function memEditSave(time) {
+  const ta = document.getElementById('memEdit_' + time);
+  if (!ta) return;
+  const text = (ta.value || '').trim();
+  if (!text) { showToast('内容不能为空'); return; }
+  const list = memGetAll(memCharId);
+  const m = list.find(x => x.time === time);
+  if (m) {
+    m.text = text;
+    try { localStorage.setItem(memKey(memCharId), JSON.stringify(list)); } catch (e) {}
+  }
+  memEditingTime = 0;
+  showToast('记忆已更新，TA 会按新内容记住');
   memRender();
 }
 
