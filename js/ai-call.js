@@ -129,10 +129,14 @@ async function aiCallGo() {
   showToast('正在检查麦克风...');
   let micOk = false;
   try {
-    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    // 8 秒拿不到麦克风授权就跳过（防止权限弹窗未响应导致整个流程挂死）
+    const s = await Promise.race([
+      navigator.mediaDevices.getUserMedia({ audio: true }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('mic timeout')), 8000))
+    ]);
     s.getTracks().forEach(t => t.stop());
     micOk = true;
-  } catch (e) { /* 用户拒绝或无设备，继续流程但不识别 */ }
+  } catch (e) { /* 用户拒绝、超时或无设备，继续流程但不识别 */ }
 
   // 呼叫阶段文案（模拟真实接通节奏）
   const phases = [
@@ -162,6 +166,13 @@ async function aiCallGo() {
   aiCallConnect();
 }
 
+// 带超时的 fetch（防止云函数/网络挂起导致通话界面卡死）
+function fetchT(url, ms) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms || 12000);
+  return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(t));
+}
+
 // ===== 真实数字人流程（IVH 云渲染 + TRTC 拉流 + 文本驱动） =====
 async function aiIvhCallFlow() {
   aiCallReal = true;
@@ -171,7 +182,7 @@ async function aiIvhCallFlow() {
   document.getElementById('aicPhaseSub').textContent = '正在唤醒数字人…';
 
   // 1. 创建会话（云端加载形象并推流到 TRTC 房间）
-  const r1 = await fetch(base + '?action=create').then(r => r.json());
+  const r1 = await fetchT(base + '?action=create', 15000).then(r => r.json());
   if (r1.code !== 0) throw new Error(r1.message || '创建会话失败');
   aiIvhSessionId = r1.sessionId;
   aiLog('会话已创建 ' + r1.sessionId + '，房间 ' + r1.roomId);
@@ -209,13 +220,13 @@ async function aiIvhCallFlow() {
   for (let i = 0; i < 40; i++) {
     if (aiCallState !== 'calling') return;
     await aiSleep(3000);
-    const r3 = await fetch(base + '?action=status&sessionId=' + r1.sessionId).then(x => x.json());
+    const r3 = await fetchT(base + '?action=status&sessionId=' + r1.sessionId, 10000).then(x => x.json());
     if (r3.code === 0 && r3.sessionStatus === 1) { ready = true; break; }
   }
   if (!ready) throw new Error('数字人加载超时');
 
   // 4. 开启会话 → 显示通话界面（开场白由 aiCallConnect 内部驱动）
-  await fetch(base + '?action=start&sessionId=' + r1.sessionId);
+  await fetchT(base + '?action=start&sessionId=' + r1.sessionId, 10000);
   aiCallConnect();
 }
 
