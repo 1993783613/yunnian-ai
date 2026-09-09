@@ -9,7 +9,7 @@
   <meta name="keywords" content="超级念,AI数字人,实时通话,语音通话,视频通话,音色克隆,数字人创建,视频商城" data-page-node-id="gyZOocPQXlLwkDcsXjxqAR">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%237C6AF2'/%3E%3Cstop offset='100%25' stop-color='%235A48D6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='38' fill='url(%23g)'/%3E%3Ctext x='50' y='64' font-size='44' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3E%E5%BF%B5%3C/text%3E%3C/svg%3E" data-page-node-id="Ki9tISPeEILzCFiQcLUOQE">
   <title>超级念</title>
-  <link rel="stylesheet" href="./css/style.css?v=20260910e" data-page-node-id="TiK9KJdu7FkTLHAlzTdBUs">
+  <link rel="stylesheet" href="./css/style.css?v=20260910f" data-page-node-id="TiK9KJdu7FkTLHAlzTdBUs">
 </head>
 <body data-page-node-id="aoiH7Yz4btrgRcOZRnTB8t">
 
@@ -611,6 +611,23 @@
   <!-- ============================================ -->
   <!-- 页面 6: 消息 -->
   <!-- ============================================ -->
+  <!-- 微信式文字聊天页 -->
+  <div class="page" id="page-chat">
+    <div class="topbar chat-topbar">
+      <button class="chat-back" onclick="navigate('library')" aria-label="返回">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="chat-top-avatar" id="chatAvatar"></div>
+      <div class="chat-top-name" id="chatName">—</div>
+      <button class="chat-top-mem" onclick="aiChatChar&&openMemory(aiChatChar.id)">记忆库</button>
+    </div>
+    <div class="page-content chat-msgs" id="chatMsgs"></div>
+    <div class="chat-inputbar">
+      <input id="chatInput" type="text" placeholder="说点什么…" maxlength="200" onkeydown="if(event.key==='Enter')chatSend()">
+      <button onclick="chatSend()">发送</button>
+    </div>
+  </div>
+
   <div class="page" id="page-messages" data-page-node-id="j9FPUWXIQPBXOSO3TV2qAa">
     <div class="topbar" data-page-node-id="qBm5jLw3OjlB4HL25E5ml8">
       <div class="topbar-title" data-page-node-id="e2rW9jVBWiGNcQ15nQSj7f">消息</div>
@@ -882,8 +899,8 @@
         onerror="var s=document.createElement('script');s.src='https://unpkg.com/trtc-sdk-v5@latest/trtc.js';document.head.appendChild(s);"></script>
 <script src="./js/config.js?v=20260906b"></script>
 <script src="./js/site-data.js?v=20260906i"></script>
-<script src="./js/app.js?v=20260910a"></script>
+<script src="./js/app.js?v=20260910f"></script>
 <script src="./js/trtc-call.js?v=20260906b"></script>
-<script src="./js/ai-call.js?v=20260910e"></script>
+<script src="./js/ai-call.js?v=20260910f"></script>
 </body>
 </html>

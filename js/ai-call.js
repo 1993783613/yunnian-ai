@@ -528,6 +528,107 @@ function aiSendText() {
   aiChipReply(text);
 }
 
+/* ============================================
+   微信式文字聊天页（角色卡「聊天」按钮进入）
+   你打字发一句，TA 打字回一句；聊天记录持久化，
+   每句自动写入记忆库，回复复用 aiReply 记忆召回引擎
+   ============================================ */
+let aiChatChar = null;
+
+function chatLogKey(id) { return 'yn_chat_' + id; }
+
+function chatLogGet(id) {
+  try { return JSON.parse(localStorage.getItem(chatLogKey(id)) || '[]'); } catch (e) { return []; }
+}
+
+function openChat(id) {
+  const char = aiFindChar(id);
+  if (!char) { showToast('角色不存在'); return; }
+  if (Date.now() - char.createdAt < CHAR_READY_AFTER_MS) { showToast('数字人还在创建中，请稍候…'); return; }
+  aiChatChar = char;
+  aiCallChar = char;   // aiReply/aiGreeting 依赖 aiCallChar
+  document.getElementById('chatName').textContent = char.name || '亲人';
+  const av = document.getElementById('chatAvatar');
+  av.innerHTML = char.photo
+    ? '<img src="' + char.photo + '" alt="">'
+    : escapeHtml((char.name || '亲').slice(0, 1));
+  const box = document.getElementById('chatMsgs');
+  box.innerHTML = '';
+  const log = chatLogGet(char.id).slice(-50);
+  log.forEach(m => chatRenderMsg(m.r, m.t));
+  navigate('chat');
+  requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
+  // 首次打开（无历史记录）：TA 主动打招呼（带记忆召回）
+  if (!log.length) {
+    setTimeout(() => {
+      if (aiChatChar && document.getElementById('page-chat').classList.contains('active')) {
+        chatAppend('ta', aiGreeting(char));
+      }
+    }, 800);
+  }
+}
+
+function chatRenderMsg(role, text) {
+  const box = document.getElementById('chatMsgs');
+  if (!box) return;
+  const row = document.createElement('div');
+  row.className = 'chat-row ' + (role === 'me' ? 'me' : 'ta');
+  let inner = '';
+  if (role === 'ta' && aiChatChar) {
+    inner += aiChatChar.photo
+      ? '<div class="chat-msg-avatar"><img src="' + aiChatChar.photo + '" alt=""></div>'
+      : '<div class="chat-msg-avatar">' + escapeHtml((aiChatChar.name || '亲').slice(0, 1)) + '</div>';
+  }
+  inner += '<div class="chat-bubble">' + escapeHtml(text) + '</div>';
+  row.innerHTML = inner;
+  box.appendChild(row);
+  box.scrollTop = box.scrollHeight;
+}
+
+function chatAppend(role, text) {
+  if (!aiChatChar) return;
+  const log = chatLogGet(aiChatChar.id);
+  log.push({ r: role, t: text, ts: Date.now() });
+  try { localStorage.setItem(chatLogKey(aiChatChar.id), JSON.stringify(log.slice(-200))); } catch (e) {}
+  chatRenderMsg(role, text);
+}
+
+function chatTyping(show) {
+  const box = document.getElementById('chatMsgs');
+  if (!box) return;
+  let tip = document.getElementById('chatTypingRow');
+  if (show) {
+    if (tip) return;
+    tip = document.createElement('div');
+    tip.className = 'chat-row ta';
+    tip.id = 'chatTypingRow';
+    tip.innerHTML = '<div class="chat-msg-avatar"><span class="chat-dot-flash">●</span></div><div class="chat-bubble">正在输入…</div>';
+    box.appendChild(tip);
+    box.scrollTop = box.scrollHeight;
+  } else if (tip) {
+    tip.remove();
+  }
+}
+
+function chatSend() {
+  if (aiCallState === 'calling') { showToast('通话中，请在通话界面对话'); return; }
+  const inp = document.getElementById('chatInput');
+  if (!inp || !aiChatChar) return;
+  const text = (inp.value || '').trim();
+  if (!text) return;
+  inp.value = '';
+  chatAppend('me', text);
+  memAdd(aiChatChar.id, text, 'chat');   // 你说的话进记忆库
+  chatTyping(true);
+  aiCallChar = aiChatChar;
+  const reply = aiReply(text);           // 记忆召回回复引擎
+  setTimeout(() => {
+    chatTyping(false);
+    chatAppend('ta', reply);
+    memAdd(aiChatChar.id, reply, 'ai');  // TA 的话也进记忆库
+  }, 700 + Math.random() * 900);
+}
+
 // ===== 控制按钮 =====
 function aiUpdateCtl(id, on, label) {
   const el = document.getElementById(id);

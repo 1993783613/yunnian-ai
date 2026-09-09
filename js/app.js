@@ -374,8 +374,8 @@ function renderMyCharacters() {
         '<div class="lib-role-meta">' + escapeHtml(c.relation || '我的亲人') + ' · ' + escapeHtml(c.voice) + '</div>' +
       '</div>' +
       '<div class="lib-role-btns">' +
-        '<button class="lib-btn-solid" onclick="event.stopPropagation();aiCallConfirm(\'' + c.id + '\',\'voice\')">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>语音</button>' +
+        '<button class="lib-btn-solid" onclick="event.stopPropagation();openChat(\'' + c.id + '\')">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>聊天</button>' +
         '<button class="lib-btn-ghost" onclick="event.stopPropagation();aiCallConfirm(\'' + c.id + '\',\'video\')">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>视频</button>' +
         '<button class="lib-btn-mem" onclick="event.stopPropagation();openMemory(\'' + c.id + '\')">' +
@@ -403,6 +403,7 @@ function deleteCharacter(id, event) {
   try {
     localStorage.setItem('yn_characters', JSON.stringify(chars.filter(x => String(x.id) !== String(id))));
     localStorage.removeItem('yn_memory_' + id);
+    localStorage.removeItem('yn_chat_' + id);
   } catch (e) { showToast('删除失败，请重试'); return; }
   showToast('角色已删除');
   renderMyCharacters();
