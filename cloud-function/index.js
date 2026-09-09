@@ -50,8 +50,8 @@ function ivhSignUrl(path) {
   return 'https://' + GW_HOST + path + '?' + content + '&signature=' + sign;
 }
 
-// Node 16 无 fetch，用 https 模块 POST JSON
-function postJSON(url, body) {
+// Node 16 无 fetch，用 https 模块 POST JSON（headers 可选，用于大模型鉴权）
+function postJSON(url, body, extraHeaders) {
   return new Promise((resolve, reject) => {
     const u = new URL(url);
     const data = JSON.stringify(body);
@@ -59,7 +59,7 @@ function postJSON(url, body) {
       hostname: u.hostname,
       path: u.pathname + u.search,
       method: 'POST',
-      headers: { 'Content-Type': 'application/json;charset=utf-8', 'Content-Length': Buffer.byteLength(data) },
+      headers: Object.assign({ 'Content-Type': 'application/json;charset=utf-8', 'Content-Length': Buffer.byteLength(data) }, extraHeaders || {}),
       timeout: 15000
     }, (res) => {
       let buf = '';
@@ -262,7 +262,7 @@ exports.main_handler = async (event) => {
         messages: messages,
         temperature: 0.85,
         max_tokens: 300
-      });
+      }, { Authorization: 'Bearer ' + apiKey });
       const reply = resp.choices && resp.choices[0] && resp.choices[0].message && resp.choices[0].message.content;
       if (!reply) return json(200, { code: 4, message: '大模型返回异常: ' + JSON.stringify(resp).slice(0, 300) });
       return json(200, { code: 0, reply: String(reply).trim() });
