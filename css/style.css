@@ -1524,6 +1524,33 @@ ul { list-style: none; }
 }
 .aic-chips button:active { background: rgba(255,255,255,0.28); }
 
+/* 打字对话输入框（通话中，位于快捷回复上方） */
+.aic-textbar {
+  position: absolute; left: 16px; right: 16px; bottom: 345px;
+  z-index: 8;
+  display: flex; gap: 8px; align-items: center;
+}
+.aic-textbar input {
+  flex: 1; min-width: 0;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 999px;
+  padding: 10px 16px;
+  color: #fff; font-size: 14px;
+  outline: none;
+  backdrop-filter: blur(6px);
+  -webkit-appearance: none;
+}
+.aic-textbar input::placeholder { color: rgba(255,255,255,0.55); }
+.aic-textbar button {
+  flex-shrink: 0;
+  background: var(--brand, #7C6AF2);
+  border: none; color: #fff; font-size: 14px;
+  padding: 10px 16px; border-radius: 999px;
+  cursor: pointer;
+}
+.aic-textbar button:active { opacity: 0.85; }
+
 /* 呼叫阶段 */
 .aic-phase {
   position: absolute; inset: 0;

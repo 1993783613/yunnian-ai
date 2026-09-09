@@ -335,12 +335,13 @@ function aiCallConnect() {
   const greet = aiGreeting(aiCallChar);
   aiSpeak(greet);
 
-  // 开启"听"（支持的设备用语音识别，否则显示快捷回复）
+  // 开启"听"（支持的设备用语音识别；打字输入框和快捷回复始终可用）
   if (aiSRSupported()) {
     aiStartRecognition();
-  } else {
-    document.getElementById('aicChips').style.display = 'flex';
   }
+  document.getElementById('aicChips').style.display = 'flex';
+  const tbx = document.getElementById('aicTextInput');
+  if (tbx) tbx.value = '';
 }
 
 // ===== AI 说话（真实模式=云驱动口型；演示模式=本地语音合成） =====
@@ -514,6 +515,17 @@ function aiShowUserBubble(text) {
 function aiChipReply(text) {
   aiShowUserBubble(text);
   setTimeout(() => aiSpeak(aiReply(text)), 300);
+}
+
+// ===== 打字对话：输入框发送（任何设备都可靠，不依赖语音识别） =====
+function aiSendText() {
+  if (aiCallState !== 'connected') return;
+  const inp = document.getElementById('aicTextInput');
+  if (!inp) return;
+  const text = (inp.value || '').trim();
+  if (!text) return;
+  inp.value = '';
+  aiChipReply(text);
 }
 
 // ===== 控制按钮 =====
