@@ -476,10 +476,11 @@ function aiStartRecognition() {
   aiRecognition.continuous = false;
   aiRecognition.interimResults = false;
 
-  aiRecognition.onresult = (e) => {
+  aiRecognition.onresult = async (e) => {
     const said = e.results[e.results.length - 1][0].transcript;
     aiShowUserBubble(said);
-    setTimeout(() => aiSpeak(aiReply(said)), 400);
+    const reply = await aiReplySmart(said);
+    aiSpeak(reply);
   };
   aiRecognition.onend = () => {
     aiRecognizing = false;
@@ -511,21 +512,78 @@ function aiShowUserBubble(text) {
   aiShowUserBubble._t = setTimeout(() => { box.style.display = 'none'; }, 4000);
 }
 
-// 快捷回复（不支持语音识别的设备）
-function aiChipReply(text) {
+// 快捷回复/通话回复（优先大模型，失败退回规则引擎）
+async function aiChipReply(text) {
   aiShowUserBubble(text);
-  setTimeout(() => aiSpeak(aiReply(text)), 300);
+  const reply = await aiReplySmart(text);
+  aiSpeak(reply);
+}
+
+// 带超时的 POST（大模型对话用）
+function fetchTPost(url, body, ms) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms || 15000);
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: ctrl.signal
+  }).finally(() => clearTimeout(t));
+}
+
+// ===== 大模型智能回复（云函数 chat 通道：人设+记忆注入 context，像豆包一样问什么答什么） =====
+async function aiLLMReply(text, timeoutMs) {
+  const char = aiCallChar || aiChatChar;
+  if (!char || !TRTC_CONFIG.ivhServer) return null;
+  // 人设：逝去亲人的口吻 + 准确回答问题
+  const sys =
+    '你是「' + (char.name || '亲人') + '」，是用户已经逝去的' + (char.relation ? char.relation.replace(/^我的/, '') : '亲人') + '，' +
+    '通过 AI 数字人与活着的家人对话。你要用亲切温暖的老年亲人口吻说话（像长辈拉家常），' +
+    '同时像智能助手一样有用：用户问知识、问问题、问怎么做事，你要给出正确、具体、清楚的答案，答完可以自然地关心一句。' +
+    '回答要口语化、简短（一般不超过60字，除非用户要求详细讲），不使用 Markdown 和表情符号，不提自己是 AI 模型。' +
+    '下面是你们之间的记忆（时间倒序），聊天时自然地想起这些事，但不要每句都提：';
+  const mems = memGetAll(char.id).slice(-12).reverse()
+    .map(m => '- [' + (m.source === 'ai' ? '你说' : m.source === 'chat' ? '文字聊天' : '用户说') + '] ' + String(m.text).slice(0, 120))
+    .join('\n');
+  const messages = [{ role: 'system', content: sys + (mems ? '\n' + mems : '（暂无记忆）') }];
+  // 带上最近几轮对话作为上下文（从聊天记录取）
+  if (typeof aiChatChar !== 'undefined' && aiChatChar) {
+    chatLogGet(aiChatChar.id).slice(-8).forEach(m => {
+      messages.push({ role: m.r === 'me' ? 'user' : 'assistant', content: String(m.t).slice(0, 200) });
+    });
+  }
+  messages.push({ role: 'user', content: text });
+  try {
+    const base = TRTC_CONFIG.ivhServer.replace(/\/+$/, '');
+    const resp = await fetchTPost(base + '?action=chat', { messages: messages }, timeoutMs || 20000);
+    const data = await resp.json();
+    if (data && data.code === 0 && data.reply) return data.reply;
+    aiLog('大模型通道: ' + (data && data.message || '不可用'));
+    return null;
+  } catch (e) {
+    aiLog('大模型通道失败: ' + (e.message || e));
+    return null;
+  }
+}
+
+// 统一智能回复入口：优先大模型，失败自动退回本地规则引擎
+async function aiReplySmart(text) {
+  const r = await aiLLMReply(text);
+  if (r) return r;
+  return aiReply(text);
 }
 
 // ===== 打字对话：输入框发送（任何设备都可靠，不依赖语音识别） =====
-function aiSendText() {
+async function aiSendText() {
   if (aiCallState !== 'connected') return;
   const inp = document.getElementById('aicTextInput');
   if (!inp) return;
   const text = (inp.value || '').trim();
-  if (!text) return;
+  if (!text || inp.dataset.busy === '1') return;
+  inp.dataset.busy = '1';
   inp.value = '';
   aiChipReply(text);
+  inp.dataset.busy = '0';
 }
 
 /* ============================================
@@ -610,7 +668,7 @@ function chatTyping(show) {
   }
 }
 
-function chatSend() {
+async function chatSend() {
   if (aiCallState === 'calling') { showToast('通话中，请在通话界面对话'); return; }
   const inp = document.getElementById('chatInput');
   if (!inp || !aiChatChar) return;
@@ -621,12 +679,10 @@ function chatSend() {
   memAdd(aiChatChar.id, text, 'chat');   // 你说的话进记忆库
   chatTyping(true);
   aiCallChar = aiChatChar;
-  const reply = aiReply(text);           // 记忆召回回复引擎
-  setTimeout(() => {
-    chatTyping(false);
-    chatAppend('ta', reply);
-    memAdd(aiChatChar.id, reply, 'ai');  // TA 的话也进记忆库
-  }, 700 + Math.random() * 900);
+  const reply = await aiReplySmart(text); // 大模型优先，失败退回规则引擎
+  chatTyping(false);
+  chatAppend('ta', reply);
+  memAdd(aiChatChar.id, reply, 'ai');    // TA 的话也进记忆库
 }
 
 // ===== 控制按钮 =====

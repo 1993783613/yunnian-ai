@@ -22,7 +22,7 @@ const https = require('https');
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
   'Content-Type': 'application/json; charset=utf-8'
 };
@@ -117,6 +117,32 @@ exports.main_handler = async (event) => {
       imageId: process.env.IVH_IMAGE_ID || '未配置',
       trtcAppId: process.env.SDKAPPID || '未配置'
     });
+  }
+
+  // ===== 2.5 list：列出账号下可用的数字人形象（找真正的 VirtualmanKey） =====
+  if (action === 'list') {
+    try {
+      const resp = await ivhPost('/v2/ivh/crmserver/customerassetservice/describesmallsampleimage', {
+        PageIndex: 1, pageIndex: 1, PageSize: 100
+      });
+      const mans = (resp.Payload && resp.Payload.Virtualmans) || [];
+      return json(200, {
+        code: 0,
+        total: mans.length,
+        currentImageId: process.env.IVH_IMAGE_ID || '未配置',
+        avatars: mans.map(m => ({
+          key: m.VirtualmanKey,
+          name: m.AnchorName,
+          clothes: m.ClothesName,
+          pose: m.PoseName,
+          resolution: m.Resolution,
+          expire: m.ExpireDate,
+          driver: m.SupportDriverTypes
+        }))
+      });
+    } catch (err) {
+      return json(500, { code: 4, message: '查询形象列表失败: ' + err.message });
+    }
   }
 
   // ===== 3. 创建数字人会话 =====
@@ -215,6 +241,33 @@ exports.main_handler = async (event) => {
       return json(200, { code: 0 });
     } catch (err) {
       return json(500, { code: 4, message: err.message });
+    }
+  }
+
+  // ===== 8. chat：大模型对话（OpenAI 兼容接口；默认智谱 GLM-4-Flash 免费） =====
+  // POST body: { messages: [{role:'system'|'user'|'assistant', content:'...'}, ...] }
+  // 环境变量：LLM_APIKEY（必填）、LLM_BASE_URL（默认智谱）、LLM_MODEL（默认 glm-4-flash）
+  if (action === 'chat') {
+    let body = {};
+    try { body = JSON.parse(event.body || '{}'); } catch (e) {}
+    const messages = Array.isArray(body.messages) ? body.messages : null;
+    if (!messages || !messages.length) return json(400, { code: 1, message: '缺少 messages 参数' });
+    const apiKey = process.env.LLM_APIKEY;
+    if (!apiKey) return json(200, { code: 3, message: '云函数未配置 LLM_APIKEY 环境变量' });
+    const llmUrl = process.env.LLM_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+    const model = process.env.LLM_MODEL || 'glm-4-flash';
+    try {
+      const resp = await postJSON(llmUrl, {
+        model: model,
+        messages: messages,
+        temperature: 0.85,
+        max_tokens: 300
+      });
+      const reply = resp.choices && resp.choices[0] && resp.choices[0].message && resp.choices[0].message.content;
+      if (!reply) return json(200, { code: 4, message: '大模型返回异常: ' + JSON.stringify(resp).slice(0, 300) });
+      return json(200, { code: 0, reply: String(reply).trim() });
+    } catch (err) {
+      return json(200, { code: 5, message: '大模型请求失败: ' + err.message });
     }
   }
 
