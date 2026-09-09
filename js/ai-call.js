@@ -28,6 +28,9 @@ let aiCallReal = false;         // true=真实数字人（IVH云渲染）；fals
 let aiIvhSessionId = '';
 let aiIvhTrtc = null;           // 拉数字人流的 TRTC 实例
 let aiIvhPollTimer = null;
+const AI_CALL_VER = '20260910d'; // 通话模块版本（排查缓存用）
+let aiConnectGuard = false;     // 防止重复接通
+let aiWatchdog = null;          // 总看门狗：无论卡在哪一步，超时强制接通演示模式
 
 // ===== 工具 =====
 function aiFmt(sec) {
@@ -91,6 +94,14 @@ function aiCallCancel() {
   navigate('library');   // 取消则返回创作平台
 }
 
+// 统一接通入口：只接通一次（真实模式/演示模式/看门狗共用，防止重复触发）
+function aiConnectOnce() {
+  if (aiConnectGuard) return;
+  aiConnectGuard = true;
+  if (aiWatchdog) { clearTimeout(aiWatchdog); aiWatchdog = null; }
+  aiCallConnect();
+}
+
 // ===== 第 2 步：发起呼叫 =====
 // iOS 需要在用户点击手势内解锁语音合成，否则后续 speak 无声
 function aiUnlockSpeech() {
@@ -109,6 +120,19 @@ async function aiCallGo() {
   aiUnlockSpeech();
   aiMemUsed = new Set();   // 每次接通重置，已提过的记忆不再重复
   aiCallState = 'calling';
+  aiConnectGuard = false;
+  aiLog('通话模块 v' + AI_CALL_VER);
+  showToast('通话模块 v' + AI_CALL_VER);   // 用于确认手机加载的是新版本（非缓存旧版）
+
+  // ★ 总看门狗：40 秒内无论卡在哪一步（权限弹窗/云函数/TRTC），强制接通演示模式
+  if (aiWatchdog) clearTimeout(aiWatchdog);
+  aiWatchdog = setTimeout(() => {
+    if (aiCallState === 'calling' && !aiConnectGuard) {
+      aiLog('看门狗触发：连接超时，强制进入演示模式');
+      showToast('接连超时，已切换演示模式');
+      aiConnectOnce();
+    }
+  }, 40000);
 
   // 卡片按钮变「呼叫中…」
   aiSetCardCalling(true);
@@ -158,12 +182,12 @@ async function aiCallGo() {
       await aiIvhCallFlow();
       return;
     } catch (err) {
-      if (aiCallState !== 'calling') return;
+      if (aiCallState !== 'calling' || aiConnectGuard) return;
       aiLog('真实数字人接入失败，降级演示模式: ' + (err.message || err));
       showToast('数字人通道繁忙，已切换演示模式');
     }
   }
-  aiCallConnect();
+  aiConnectOnce();
 }
 
 // 带超时的 fetch（防止云函数/网络挂起导致通话界面卡死）
@@ -227,7 +251,7 @@ async function aiIvhCallFlow() {
 
   // 4. 开启会话 → 显示通话界面（开场白由 aiCallConnect 内部驱动）
   await fetchT(base + '?action=start&sessionId=' + r1.sessionId, 10000);
-  aiCallConnect();
+  aiConnectOnce();
 }
 
 function aiLog(msg) {
@@ -567,6 +591,7 @@ function aiHangup() {
   if (aiLocalStream) { aiLocalStream.getTracks().forEach(t => t.stop()); aiLocalStream = null; }
   if (aiCallTimer) { clearInterval(aiCallTimer); aiCallTimer = null; }
   if (aiIvhPollTimer) { clearInterval(aiIvhPollTimer); aiIvhPollTimer = null; }
+  if (aiWatchdog) { clearTimeout(aiWatchdog); aiWatchdog = null; }
   // 真实模式：关闭云端会话（释放并发）+ 退出房间
   if (aiCallReal && aiIvhSessionId && TRTC_CONFIG.ivhServer) {
     const base = TRTC_CONFIG.ivhServer.replace(/\/+$/, '');
