@@ -53,12 +53,27 @@ function aiVoiceProfile(voiceName) {
   return key ? voiceProfiles[key] : { pitch: 0.9, rate: 0.92 };
 }
 
+// ===== 通话页容器激活（确认弹窗/通话界面都挂在 page-call 内，必须先激活容器才可见） =====
+function showCallShell() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pc = document.getElementById('page-call');
+  if (pc) pc.classList.add('active');
+  // 隐藏真人通话的大厅/房间界面，避免确认弹窗后面露出大厅
+  const lobby = document.getElementById('callLobby');
+  if (lobby) lobby.style.display = 'none';
+  const activeBox = document.getElementById('callActive');
+  if (activeBox) activeBox.style.display = 'none';
+  window.scrollTo(0, 0);
+}
+
 // ===== 第 1 步：确认弹窗 =====
 function aiCallConfirm(id, mode) {
   const char = aiFindChar(id);
   if (!char) { showToast('角色不存在'); return; }
   const ready = Date.now() - char.createdAt >= CHAR_READY_AFTER_MS;
   if (!ready) { showToast('数字人还在创建中，请稍候…'); return; }
+
+  showCallShell();
 
   aiCallChar = char;
   aiCallMode = mode || 'video';
@@ -73,6 +88,7 @@ function aiCallConfirm(id, mode) {
 function aiCallCancel() {
   document.getElementById('aicConfirmMask').style.display = 'none';
   aiCallChar = null;
+  navigate('library');   // 取消则返回创作平台
 }
 
 // ===== 第 2 步：发起呼叫 =====
