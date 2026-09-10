@@ -113,13 +113,63 @@ function tc3Post(host, service, version, action, payload) {
   });
 }
 
+// ===== 万能事件解析：兼容 SCF 各种事件形态（对象/字符串/空查询/Web函数） =====
+function parseQuery(event) {
+  let ev = event;
+  if (typeof ev === 'string') {
+    try { ev = JSON.parse(ev); } catch (e) { return { __raw: ev }; }
+  }
+  if (!ev || typeof ev !== 'object') return {};
+  let q = ev.queryString || ev.queryStringParameters || null;
+  if (typeof q === 'string' && q) {
+    const o = {};
+    new URLSearchParams(q).forEach((v, k) => { o[k] = v; });
+    q = o;
+  }
+  if (!q) {
+    // Web 函数形态：从原始 URL 里抠查询串
+    const urlLike = ev.rawUrl || ev.url || ev.path || '';
+    const qi = String(urlLike).indexOf('?');
+    if (qi >= 0) {
+      const o = {};
+      new URLSearchParams(String(urlLike).slice(qi + 1)).forEach((v, k) => { o[k] = v; });
+      q = o;
+    }
+  }
+  if ((!q || !Object.keys(q).length) && ev.body) {
+    // 兜底：POST JSON body 里可能带 action 等字段
+    try {
+      const b = typeof ev.body === 'string' ? JSON.parse(ev.body) : ev.body;
+      if (b && typeof b === 'object') q = Object.assign({}, b, q || {});
+    } catch (e) {}
+  }
+  if (!q) q = ev;
+  return q || {};
+}
+
 exports.main_handler = async (event) => {
-  if (event.httpMethod === 'OPTIONS') {
+  if (event && typeof event === 'object' && event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: CORS_HEADERS, body: '' };
   }
 
-  const query = event.queryString || event.queryStringParameters || event || {};
+  const query = parseQuery(event);
   const action = query.action || 'usersig';
+
+  // ===== 0. debug：返回云函数实际收到的事件结构（排查触发器问题用） =====
+  if (action === 'debug') {
+    const ev = typeof event === 'object' ? event : { __type: typeof event, __raw: String(event).slice(0, 500) };
+    return json(200, {
+      code: 0,
+      eventType: typeof event,
+      topKeys: ev && typeof ev === 'object' ? Object.keys(ev) : [],
+      queryString: ev && ev.queryString,
+      queryStringParameters: ev && ev.queryStringParameters,
+      rawUrl: ev && (ev.rawUrl || ev.url || ev.path || ''),
+      parsedAction: action,
+      parsedQuery: query,
+      preview: JSON.stringify(ev).slice(0, 600)
+    });
+  }
 
   // ===== 1. UserSig（原有） =====
   if (action === 'usersig') {
@@ -243,17 +293,22 @@ exports.main_handler = async (event) => {
   }
 
   // ===== 6. 文本驱动（数字人开口说话 + 口型同步） =====
+  // variant: 1={Text} 2={Text,ChatCommand:'NotUseChat'}(默认) 3={Type:0,Text} —— 便于远程排查驱动报错
   if (action === 'drive') {
     try {
       const text = (query.text || '').slice(0, 4000);
       if (!text) return json(400, { code: 1, message: '缺少 text' });
-      await ivhPost('/v2/ivh/interactdriver/interactdriverservice/command', {
+      let Data;
+      if (query.variant === '1') Data = { Text: text };
+      else if (query.variant === '3') Data = { Type: 0, Text: text };
+      else Data = { Text: text, ChatCommand: 'NotUseChat' };
+      const resp = await ivhPost('/v2/ivh/interactdriver/interactdriverservice/command', {
         ReqId: uuid32(),
         SessionId: query.sessionId,
         Command: 'SEND_TEXT',
-        Data: { Text: text, ChatCommand: 'NotUseChat' }
+        Data: Data
       });
-      return json(200, { code: 0 });
+      return json(200, { code: 0, resp: JSON.stringify(resp).slice(0, 400) });
     } catch (err) {
       return json(500, { code: 4, message: err.message });
     }
