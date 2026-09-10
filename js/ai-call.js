@@ -354,9 +354,13 @@ function aiCallConnect() {
     aiSpeak(greet);
   }
 
-  // 通话中显示"对她说"输入框（打字=可靠问答通道）
+  // 按住说话按钮复位；真实模式显示「开启声音」浮层（iOS 远端音频需一次点击激活）
   const tb = document.getElementById('aicTextbar');
-  if (tb) { tb.style.display = 'flex'; document.getElementById('aicTextInput').value = ''; }
+  if (tb) tb.style.display = 'flex';
+  const tk = document.getElementById('aicTalkBtn');
+  if (tk) { tk.textContent = '按住 说话'; tk.classList.remove('rec'); }
+  const ul = document.getElementById('aicAudioUnlock');
+  if (ul) ul.style.display = aiCallReal ? 'flex' : 'none';
 
   // 开启"听"（支持的设备用语音识别；纯视频对话，无快捷回复）
   if (aiSRSupported()) {
@@ -593,21 +597,125 @@ async function aiReplySmart(text) {
   return aiReply(text);
 }
 
-// ===== 通话中打字对话：我问什么她答什么（真实模式=云驱动开口；演示模式=本地语音） =====
-let aiTextBusy = false;
-async function aiSendText() {
-  if (aiCallState !== 'connected' || aiTextBusy) return;
-  const inp = document.getElementById('aicTextInput');
-  if (!inp) return;
-  const text = (inp.value || '').trim();
-  if (!text) return;
-  aiTextBusy = true;
-  inp.value = '';
-  aiShowUserBubble(text);
-  const reply = await aiReplySmart(text);
-  aiSpeak(reply);
-  aiTextBusy = false;
+// ===== 声音解锁（iOS：远端音频需一次用户点击激活；点击后她会重新开口） =====
+async function aiUnlockAudio() {
+  const box = document.getElementById('aicAudioUnlock');
+  if (box) box.style.display = 'none';
+  try {
+    document.querySelectorAll('#aiCallScreen video, #aiCallScreen audio').forEach(v => {
+      v.muted = false;
+      if (v.play) { const p = v.play(); if (p && p.catch) p.catch(() => {}); }
+    });
+  } catch (e) {}
+  if (aiIvhTrtc && aiIvhRemoteUserId) {
+    try { await aiIvhTrtc.muteRemoteAudio(aiIvhRemoteUserId, false); } catch (e) {}
+  }
+  aiSpeakerOn = true;
+  const lbl = document.getElementById('spkCtlLabel');
+  if (lbl) lbl.textContent = '扬声器已开';
+  // 重发开场白（之前那次可能被静音吞掉）
+  if (aiCallState === 'connected' && aiCallChar) aiSpeak(aiGreeting(aiCallChar));
 }
+
+// ===== 按住说话（微信式语音问答：录音→云ASR识别→大模型回答→她开口说） =====
+let aiRec = null, aiRecChunks = [], aiRecMime = '';
+
+function aiTalkFormat() {
+  const m = aiRecMime || '';
+  if (m.indexOf('mp4') > -1 || m.indexOf('aac') > -1) return 'm4a';
+  if (m.indexOf('ogg') > -1 || m.indexOf('webm') > -1) return 'ogg-opus';
+  return 'mp3';
+}
+
+async function aiTalkStart(e) {
+  if (e) e.preventDefault();
+  if (aiCallState !== 'connected' || aiRec) return;
+  const btn = document.getElementById('aicTalkBtn');
+  if (!window.MediaRecorder) { showToast('该手机不支持录音'); return; }
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    showToast('无法访问麦克风，请检查权限');
+    return;
+  }
+  aiRecChunks = [];
+  let mime = '';
+  const candidates = ['audio/mp4', 'audio/aac', 'audio/webm;codecs=opus', 'audio/webm'];
+  for (const t of candidates) { try { if (MediaRecorder.isTypeSupported(t)) { mime = t; break; } } catch (x) {} }
+  try {
+    aiRec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  } catch (x) {
+    try { aiRec = new MediaRecorder(stream); } catch (y) { stream.getTracks().forEach(t => t.stop()); aiRec = null; showToast('录音启动失败'); return; }
+  }
+  aiRecMime = aiRec.mimeType || mime || '';
+  aiRec.ondataavailable = (ev) => { if (ev.data && ev.data.size) aiRecChunks.push(ev.data); };
+  aiRec.onstop = () => {
+    stream.getTracks().forEach(t => t.stop());
+    const blob = new Blob(aiRecChunks, { type: aiRecMime || 'audio/mp4' });
+    aiRec = null;
+    btn.textContent = '按住 说话';
+    btn.classList.remove('rec');
+    if (blob.size < 2000) { showToast('说话时间太短，再试一次'); return; }
+    aiTalkRecognize(blob);
+  };
+  aiRec.start();
+  btn.textContent = '松开 结束';
+  btn.classList.add('rec');
+  aiRec._max = setTimeout(() => { if (aiRec) aiTalkStop(); }, 60000);   // 最长60秒
+}
+
+function aiTalkStop() {
+  if (!aiRec) return;
+  clearTimeout(aiRec._max);
+  const btn = document.getElementById('aicTalkBtn');
+  if (btn) btn.textContent = '识别中…';
+  try { aiRec.stop(); } catch (e) { aiRec = null; if (btn) btn.textContent = '按住 说话'; }
+}
+
+async function aiTalkRecognize(blob) {
+  const btn = document.getElementById('aicTalkBtn');
+  try {
+    const buf = new Uint8Array(await blob.arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+    const b64 = btoa(bin);
+    const base = (TRTC_CONFIG.ivhServer || '').replace(/\/+$/, '');
+    const resp = await fetchTPost(base + '?action=asr', { format: aiTalkFormat(), audio: b64 }, 25000);
+    const d = await resp.json().catch(() => ({}));
+    if (d.code !== 0 || !d.text) {
+      showToast(d.message || '没听清，再试一次');
+      if (btn) btn.textContent = '按住 说话';
+      return;
+    }
+    aiShowUserBubble(d.text);
+    const reply = await aiReplySmart(d.text);
+    if (btn) btn.textContent = '按住 说话';
+    aiSpeak(reply);
+  } catch (e) {
+    showToast('识别失败：' + (e.message || e));
+    if (btn) btn.textContent = '按住 说话';
+  }
+}
+
+// 挂断按钮双保险（onclick 之外再绑 touchend，防 iOS 点按失效）
+(function bindHangup() {
+  const b = document.getElementById('aicHangupBtn');
+  if (!b) return;
+  b.addEventListener('touchend', (e) => { e.preventDefault(); aiHangup(); }, { passive: false });
+})();
+
+// 绑定按住说话事件（touch 优先，桌面鼠标兜底）
+(function bindTalk() {
+  const b = document.getElementById('aicTalkBtn');
+  if (!b) return;
+  b.addEventListener('touchstart', (e) => { e.preventDefault(); aiTalkStart(); }, { passive: false });
+  b.addEventListener('touchend', (e) => { e.preventDefault(); aiTalkStop(); }, { passive: false });
+  b.addEventListener('touchcancel', () => aiTalkStop());
+  b.addEventListener('mousedown', () => { if (!('ontouchstart' in window)) aiTalkStart(); });
+  b.addEventListener('mouseup', () => { if (!('ontouchstart' in window)) aiTalkStop(); });
+  b.addEventListener('mouseleave', () => { if (aiRec && !('ontouchstart' in window)) aiTalkStop(); });
+})();
 
 /* ============================================
    微信式文字聊天页（角色卡「聊天」按钮进入）
@@ -775,33 +883,42 @@ async function aiFlipCamera() {
   }
 }
 
-// ===== 挂断 / 清理 =====
+// ===== 挂断 / 清理（异常兜底：无论内部是否报错，界面必返回首页） =====
 function aiHangup() {
-  aiCallState = 'ended';
-  aiStopRecognition();
-  if ('speechSynthesis' in window) speechSynthesis.cancel();
-  if (aiLocalStream) { aiLocalStream.getTracks().forEach(t => t.stop()); aiLocalStream = null; }
-  if (aiCallTimer) { clearInterval(aiCallTimer); aiCallTimer = null; }
-  if (aiIvhPollTimer) { clearInterval(aiIvhPollTimer); aiIvhPollTimer = null; }
-  if (aiWatchdog) { clearTimeout(aiWatchdog); aiWatchdog = null; }
-  // 真实模式：关闭云端会话（释放并发）+ 退出房间
-  if (aiCallReal && aiIvhSessionId && TRTC_CONFIG.ivhServer) {
-    const base = TRTC_CONFIG.ivhServer.replace(/\/+$/, '');
-    fetch(base + '?action=close&sessionId=' + aiIvhSessionId).catch(() => {});
-    if (aiIvhTrtc) {
-      try { aiIvhTrtc.exitRoom(); } catch (e) {}
-      aiIvhTrtc = null;
+  try {
+    aiCallState = 'ended';
+    aiStopRecognition();
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    if (aiRec) { try { clearTimeout(aiRec._max); aiRec.stop(); } catch (e) {} aiRec = null; }
+    if (aiLocalStream) { aiLocalStream.getTracks().forEach(t => t.stop()); aiLocalStream = null; }
+    if (aiCallTimer) { clearInterval(aiCallTimer); aiCallTimer = null; }
+    if (aiIvhPollTimer) { clearInterval(aiIvhPollTimer); aiIvhPollTimer = null; }
+    if (aiWatchdog) { clearTimeout(aiWatchdog); aiWatchdog = null; }
+    // 真实模式：关闭云端会话（释放并发）+ 退出房间
+    if (aiCallReal && aiIvhSessionId && TRTC_CONFIG.ivhServer) {
+      const sid = aiIvhSessionId;
+      const base = TRTC_CONFIG.ivhServer.replace(/\/+$/, '');
+      fetch(base + '?action=close&sessionId=' + sid).catch(() => {});
+      if (aiIvhTrtc) {
+        try { aiIvhTrtc.exitRoom(); } catch (e) {}
+        aiIvhTrtc = null;
+      }
+      aiIvhSessionId = '';
+      aiIvhRemoteUserId = '';
+      aiCallReal = false;
     }
-    aiIvhSessionId = '';
-    aiIvhRemoteUserId = '';
-    aiCallReal = false;
-  }
-  aiSetCardCalling(false);
-  document.getElementById('aiCallScreen').style.display = 'none';
-  const tb = document.getElementById('aicTextbar');
-  if (tb) tb.style.display = 'none';
-  document.getElementById('aicSubtitle').style.display = 'none';
-  document.getElementById('aicUserBubble').style.display = 'none';
+    aiSetCardCalling(false);
+  } catch (e) { /* 清理异常不阻塞返回 */ }
+  // 兜底清理（必须执行）
+  try {
+    document.getElementById('aiCallScreen').style.display = 'none';
+    const tb = document.getElementById('aicTextbar');
+    if (tb) tb.style.display = 'none';
+    const ul = document.getElementById('aicAudioUnlock');
+    if (ul) ul.style.display = 'none';
+    document.getElementById('aicSubtitle').style.display = 'none';
+    document.getElementById('aicUserBubble').style.display = 'none';
+  } catch (e) {}
   navigate('library');
   showToast('通话已结束');
 }

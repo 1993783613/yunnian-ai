@@ -85,6 +85,33 @@ async function ivhPost(path, payload) {
   return resp;
 }
 
+// ===== 腾讯云 TC3-HMAC-SHA256 签名 POST（用于 ASR 一句话识别） =====
+const crypto = require('crypto');
+function tc3Post(host, service, version, action, payload) {
+  const secretId = process.env.ASR_SECRET_ID || '';
+  const secretKey = process.env.ASR_SECRET_KEY || '';
+  if (!secretId || !secretKey) return Promise.reject(new Error('云函数未配置 ASR_SECRET_ID / ASR_SECRET_KEY 环境变量'));
+  const ts = Math.floor(Date.now() / 1000);
+  const date = new Date(ts * 1000).toISOString().slice(0, 10);
+  const body = JSON.stringify(payload);
+  const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
+  const canonical = 'POST\n/\n\n' + 'content-type:application/json\nhost:' + host + '\n\n' + 'content-type;host\n' + sha(body);
+  const toSign = 'TC3-HMAC-SHA256\n' + ts + '\n' + date + '/' + service + '/tc3_request\n' + sha(canonical);
+  const kDate = crypto.createHmac('sha256', 'TC3' + secretKey).update(date).digest();
+  const kService = crypto.createHmac('sha256', kDate).update(service).digest();
+  const kSign = crypto.createHmac('sha256', kService).update('tc3_request').digest();
+  const signature = crypto.createHmac('sha256', kSign).update(toSign).digest('hex');
+  const auth = 'TC3-HMAC-SHA256 Credential=' + secretId + '/' + date + '/' + service + '/tc3_request, SignedHeaders=content-type;host, Signature=' + signature;
+  return postJSON('https://' + host + '/', body, {
+    'Content-Type': 'application/json',
+    'Authorization': auth,
+    'X-TC-Action': action,
+    'X-TC-Version': version,
+    'X-TC-Timestamp': String(ts),
+    'X-TC-Region': process.env.ASR_REGION || 'ap-guangzhou'
+  });
+}
+
 exports.main_handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: CORS_HEADERS, body: '' };

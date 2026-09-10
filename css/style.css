@@ -1533,26 +1533,42 @@ ul { list-style: none; }
   display: flex; gap: 8px; align-items: center;
   pointer-events: auto;
 }
-.aic-textbar input {
-  flex: 1; min-width: 0;
-  background: rgba(0,0,0,0.45);
-  border: 1px solid rgba(255,255,255,0.25);
+.aic-talk-btn {
+  width: 100%;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.3);
   border-radius: 999px;
-  padding: 10px 16px;
-  color: #fff; font-size: 14px;
-  outline: none;
+  padding: 12px 16px;
+  color: #fff; font-size: 15px; letter-spacing: 1px;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+  -webkit-touch-callout: none; -webkit-appearance: none;
   backdrop-filter: blur(6px);
-  -webkit-appearance: none;
+  touch-action: none;
 }
-.aic-textbar input::placeholder { color: rgba(255,255,255,0.55); }
-.aic-textbar button {
-  flex-shrink: 0;
-  background: var(--brand, #7C6AF2);
-  border: none; color: #fff; font-size: 14px;
-  padding: 10px 16px; border-radius: 999px;
+.aic-talk-btn.rec {
+  background: rgba(227, 77, 77, 0.85);
+  border-color: rgba(255,255,255,0.6);
+  animation: aicRecPulse 1.2s ease-in-out infinite;
+}
+@keyframes aicRecPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(227,77,77,0.5); }
+  50% { box-shadow: 0 0 0 10px rgba(227,77,77,0); }
+}
+.aic-audio-unlock {
+  position: absolute; left: 0; right: 0; bottom: 300px;
+  z-index: 45;
+  display: flex; justify-content: center;
+  pointer-events: none;
+}
+.aic-audio-unlock button {
+  pointer-events: auto;
+  background: rgba(124, 106, 242, 0.92);
+  border: none; color: #fff; font-size: 15px;
+  padding: 13px 22px; border-radius: 999px;
   cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  animation: aicRecPulse 1.6s ease-in-out infinite;
 }
-.aic-textbar button:active { opacity: 0.85; }
 
 /* ===== 微信式文字聊天页 ===== */
 .chat-topbar {
@@ -1682,8 +1698,9 @@ ul { list-style: none; }
 .aic-ctl.off .aic-ctl-circle .slash { display: block; }
 .aic-ctl-circle .slash { display: none; }
 .aic-ctl-label { font-size: 11px; color: rgba(255,255,255,0.85); }
-.aic-hangup-wrap { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.aic-hangup-wrap { display: flex; flex-direction: column; align-items: center; gap: 7px; z-index: 60; position: relative; }
 .aic-hangup {
+  pointer-events: auto; touch-action: manipulation;
   width: 62px; height: 62px; border-radius: 50%;
   border: none; background: #e34d4d; color: #fff;
   display: flex; align-items: center; justify-content: center;
