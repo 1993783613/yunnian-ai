@@ -150,9 +150,11 @@ async function getUserSig(userId) {
   if (!TRTC_CONFIG.userSigServer) {
     throw new Error('尚未配置签名服务');
   }
-  const url = TRTC_CONFIG.userSigServer.replace(/\/+$/, '') +
-    '?sdkAppId=' + TRTC_CONFIG.sdkAppId + '&userId=' + encodeURIComponent(userId);
-  const resp = await fetch(url);
+  // action 放进 POST body（避免 HTTP 触发器网关吞掉 URL 查询参数）
+  const resp = await cfPost('usersig', {
+    sdkAppId: TRTC_CONFIG.sdkAppId,
+    userId: userId
+  }, 10000);
   if (!resp.ok) throw new Error('签名服务返回 HTTP ' + resp.status);
   const data = await resp.json();
   const sig = data.userSig || data.sig || data.data;

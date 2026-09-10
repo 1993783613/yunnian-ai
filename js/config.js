@@ -17,3 +17,17 @@ const TRTC_CONFIG = {
   // 为空时通话走演示模式（照片+本地语音合成），配置后自动切换真实数字人
   ivhServer: 'https://1422484427-kxu5p373mj.ap-guangzhou.tencentscf.com/'
 };
+
+// 云函数统一调用：action 放进 POST body
+// （腾讯云 HTTP 触发器网关有时会吞掉 URL 查询参数，放进 body 最稳，云函数 parseQuery 已支持）
+function cfPost(action, payload, ms) {
+  const base = (TRTC_CONFIG.ivhServer || '').replace(/\/+$/, '');
+  const ctrl = new AbortController();
+  const t = setTimeout(function () { ctrl.abort(); }, ms || 15000);
+  return fetch(base, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign({ action: action }, payload || {})),
+    signal: ctrl.signal
+  }).finally(function () { clearTimeout(t); });
+}

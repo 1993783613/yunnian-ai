@@ -229,13 +229,12 @@ function fetchT(url, ms) {
 // ===== 真实数字人流程（IVH 云渲染 + TRTC 拉流 + 文本驱动） =====
 async function aiIvhCallFlow() {
   aiCallReal = true;
-  const base = TRTC_CONFIG.ivhServer.replace(/\/+$/, '');
 
   document.getElementById('aicPhaseMain').textContent = '正在接通…';
   document.getElementById('aicPhaseSub').textContent = '正在唤醒数字人…';
 
-  // 1. 创建会话（云端加载形象并推流到 TRTC 房间）
-  const r1 = await fetchT(base + '?action=create', 15000).then(r => r.json());
+  // 1. 创建会话（云端加载形象并推流到 TRTC 房间）— action 放进 POST body（规避网关吞查询参数）
+  const r1 = await cfPost('create', {}, 15000).then(r => r.json());
   if (r1.code !== 0) throw new Error(r1.message || '创建会话失败');
   aiIvhSessionId = r1.sessionId;
   aiLog('会话已创建 ' + r1.sessionId + '，房间 ' + r1.roomId);
@@ -288,13 +287,13 @@ async function aiIvhCallFlow() {
   for (let i = 0; i < 40; i++) {
     if (aiCallState !== 'calling') return;
     await aiSleep(3000);
-    const r3 = await fetchT(base + '?action=status&sessionId=' + r1.sessionId, 10000).then(x => x.json());
+    const r3 = await cfPost('status', { sessionId: r1.sessionId }, 10000).then(x => x.json());
     if (r3.code === 0 && r3.sessionStatus === 1) { ready = true; break; }
   }
   if (!ready) throw new Error('数字人加载超时');
 
   // 4. 开启会话 → 等引擎就绪 → 显示通话界面（开场白延迟发出，避免驱动过早被吞）
-  await fetchT(base + '?action=start&sessionId=' + r1.sessionId, 10000);
+  await cfPost('start', { sessionId: r1.sessionId }, 10000);
   aiLog('会话已开启，2秒后接通');
   await aiSleep(2000);
   aiConnectOnce();
@@ -317,9 +316,8 @@ async function ivhSpeak(text) {
   clearTimeout(ivhSpeak._t);
   ivhSpeak._t = setTimeout(() => { sub.style.display = 'none'; }, 8000);
   if (!aiIvhSessionId) { aiLog('驱动跳过：无会话'); return; }
-  const base = TRTC_CONFIG.ivhServer.replace(/\/+$/, '');
   const doDrive = async () => {
-    const resp = await fetchT(base + '?action=drive&sessionId=' + aiIvhSessionId + '&text=' + encodeURIComponent(text), 10000);
+    const resp = await cfPost('drive', { sessionId: aiIvhSessionId, text: text }, 10000);
     const d = await resp.json().catch(() => ({}));
     return d.code === 0;
   };
@@ -633,8 +631,7 @@ async function aiLLMReply(text, timeoutMs) {
   }
   messages.push({ role: 'user', content: text });
   try {
-    const base = TRTC_CONFIG.ivhServer.replace(/\/+$/, '');
-    const resp = await fetchTPost(base + '?action=chat', { messages: messages }, timeoutMs || 20000);
+    const resp = await cfPost('chat', { messages: messages }, timeoutMs || 20000);
     const data = await resp.json();
     if (data && data.code === 0 && data.reply) return data.reply;
     aiLog('大模型通道: ' + (data && data.message || '不可用'));
@@ -772,9 +769,8 @@ async function aiUtterance(samples, rate) {
   const u8 = new Uint8Array(wav);
   let bin = '';
   for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
-  const base = (TRTC_CONFIG.ivhServer || '').replace(/\/+$/, '');
   try {
-    const resp = await fetchTPost(base + '?action=asr', { format: 'wav', audio: btoa(bin) }, 25000);
+    const resp = await cfPost('asr', { format: 'wav', audio: btoa(bin) }, 25000);
     const d = await resp.json().catch(() => ({}));
     if (d.code === 0 && d.text) {
       aiShowUserBubble(d.text);
@@ -974,8 +970,7 @@ function aiHangup() {
     // 真实模式：关闭云端会话（释放并发）+ 退出房间
     if (aiCallReal && aiIvhSessionId && TRTC_CONFIG.ivhServer) {
       const sid = aiIvhSessionId;
-      const base = TRTC_CONFIG.ivhServer.replace(/\/+$/, '');
-      fetch(base + '?action=close&sessionId=' + sid).catch(() => {});
+      cfPost('close', { sessionId: sid }, 8000).catch(() => {});
       if (aiIvhTrtc) {
         try { aiIvhTrtc.exitRoom(); } catch (e) {}
         aiIvhTrtc = null;
