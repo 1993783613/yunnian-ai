@@ -299,5 +299,33 @@ exports.main_handler = async (event) => {
     }
   }
 
+  // ===== 9. asr：一句话语音识别（腾讯云 ASR，TC3 签名） =====
+  // POST body: { format: 'wav'|'m4a'|'mp3', audio: '<base64>' }
+  // 环境变量：ASR_SECRET_ID / ASR_SECRET_KEY（必填，CAM 密钥）
+  if (action === 'asr') {
+    let body = {};
+    try { body = JSON.parse(event.body || '{}'); } catch (e) {}
+    const audio = body.audio;
+    const format = body.format || 'wav';
+    if (!audio) return json(400, { code: 1, message: '缺少 audio(base64) 参数' });
+    try {
+      const resp = await tc3Post('asr.cloud.tencent.com', 'asr', '2019-06-14', 'SentenceRecognition', {
+        ProjectId: 0,
+        SubServiceType: 2,
+        EngSerViceType: '16k_zh',
+        SourceType: 1,
+        VoiceFormat: format,
+        UsrAudioKey: 'yunnian-call',
+        Audio: audio
+      });
+      const r = resp.Response || resp;
+      if (r.Error) return json(200, { code: 2, message: 'ASR错误: ' + r.Error.Code + ' ' + r.Error.Message });
+      if (!r.Text) return json(200, { code: 3, message: 'ASR未识别到内容: ' + JSON.stringify(resp).slice(0, 200) });
+      return json(200, { code: 0, text: r.Text });
+    } catch (err) {
+      return json(200, { code: 4, message: '语音识别失败: ' + err.message });
+    }
+  }
+
   return json(400, { code: 1, message: '未知 action: ' + action });
 };
