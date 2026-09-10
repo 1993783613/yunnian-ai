@@ -102,7 +102,8 @@ function tc3Post(host, service, version, action, payload) {
   const kSign = crypto.createHmac('sha256', kService).update('tc3_request').digest();
   const signature = crypto.createHmac('sha256', kSign).update(toSign).digest('hex');
   const auth = 'TC3-HMAC-SHA256 Credential=' + secretId + '/' + date + '/' + service + '/tc3_request, SignedHeaders=content-type;host, Signature=' + signature;
-  return postJSON('https://' + host + '/', body, {
+  // 注意：postJSON 内部会 JSON.stringify，必须传对象（body 变量仅用于签名，保证签名的串和发送的串一致）
+  return postJSON('https://' + host + '/', payload, {
     'Content-Type': 'application/json',
     'Authorization': auth,
     'X-TC-Action': action,
