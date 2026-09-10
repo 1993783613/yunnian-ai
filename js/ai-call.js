@@ -115,10 +115,38 @@ function aiUnlockSpeech() {
   } catch (e) {}
 }
 
+// ★ 零点击关键：在「开始通话」这次点击手势内，预解锁 AudioContext 音频通道。
+// iOS 要求音频在用户手势内激活——在这里激活后，接通后的远端声音、自动聆听都不再需要任何额外点击。
+let aiAudioPrimed = false;
+function aiPrimeAudio() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) {
+      if (!aiPrimeAudio._ctx) aiPrimeAudio._ctx = new AC();
+      const c = aiPrimeAudio._ctx;
+      if (c.state === 'suspended' && c.resume) c.resume().catch(() => {});
+      const b = c.createBuffer(1, 1024, c.sampleRate);   // 播放一段静音，正式激活音频输出通道
+      const s = c.createBufferSource();
+      s.buffer = b; s.connect(c.destination); s.start(0);
+    }
+    // 预解锁麦克风：提前拿到授权与轨道，接通后全时聆听直接复用
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
+        .then(st => {
+          aiPrimeAudio._preMic = st;
+          st.getTracks().forEach(t => t.stop());   // 只为触发授权弹窗在手势内出现，轨道即取即停
+        })
+        .catch(() => {});
+    }
+    aiAudioPrimed = true;
+  } catch (e) {}
+}
+
 async function aiCallGo() {
   document.getElementById('aicConfirmMask').style.display = 'none';
   if (!aiCallChar) return;
   aiUnlockSpeech();
+  aiPrimeAudio();          // ★ 在这次点击手势内解锁声音+麦克风，实现通话全程零额外点击
   aiMemUsed = new Set();   // 每次接通重置，已提过的记忆不再重复
   aiCallState = 'calling';
   aiConnectGuard = false;
@@ -223,6 +251,17 @@ async function aiIvhCallFlow() {
       await aiIvhTrtc.startRemoteVideo({ userId: ev.userId, streamType: ev.streamType, view: box });
       box.style.display = 'block';
       document.getElementById('aicFullPhoto').style.display = 'none';
+      // 已预解锁：自动取消静音并播放，无需任何点击
+      if (aiAudioPrimed) {
+        try {
+          box.querySelectorAll('video, audio').forEach(v => {
+            v.muted = false;
+            v.volume = 1;
+            if (v.play) { const p = v.play(); if (p && p.catch) p.catch(() => {}); }
+          });
+          if (aiIvhTrtc.muteRemoteAudio) await aiIvhTrtc.muteRemoteAudio(ev.userId, false);
+        } catch (e) {}
+      }
       aiLog('数字人画面渲染成功 ✓');
     } catch (e) {
       aiLog('渲染失败: ' + (e.message || e));
@@ -354,11 +393,27 @@ function aiCallConnect() {
     aiSpeak(greet);
   }
 
-  // 聆听指示复位；显示「开启语音对话」浮层（iOS 需一次用户点击激活音频+麦克风）
+  // 聆听指示复位
   const lst = document.getElementById('aicListen');
   if (lst) lst.style.display = 'none';
-  const ul = document.getElementById('aicAudioUnlock');
-  if (ul) ul.style.display = 'flex';
+
+  if (aiAudioPrimed) {
+    // ★ 已在「开始通话」点击时解锁：零额外点击，直接开声音+开麦聆听（微信视频式）
+    try {
+      document.querySelectorAll('#aiCallScreen video, #aiCallScreen audio').forEach(v => {
+        v.muted = false;
+        if (v.play) { const p = v.play(); if (p && p.catch) p.catch(() => {}); }
+      });
+    } catch (e) {}
+    if (aiIvhTrtc && aiIvhRemoteUserId) {
+      try { aiIvhTrtc.muteRemoteAudio(aiIvhRemoteUserId, false); } catch (e) {}
+    }
+    setTimeout(() => { if (aiCallState === 'connected') aiListenStart(); }, 4000);   // 等开场白说完大部分再听
+  } else {
+    // 兜底：预解锁失败才显示「开启语音对话」浮层
+    const ul = document.getElementById('aicAudioUnlock');
+    if (ul) ul.style.display = 'flex';
+  }
 
   // 开启"听"（支持的设备用语音识别；纯视频对话，无快捷回复）
   if (aiSRSupported()) {
