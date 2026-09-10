@@ -315,13 +315,13 @@ exports.main_handler = async (event) => {
         EngSerViceType: '16k_zh',
         SourceType: 1,
         VoiceFormat: format,
-        UsrAudioKey: 'yunnian-call',
-        Audio: audio
+        Data: audio,
+        DataLen: Buffer.from(audio, 'base64').length
       });
       const r = resp.Response || resp;
       if (r.Error) return json(200, { code: 2, message: 'ASR错误: ' + r.Error.Code + ' ' + r.Error.Message });
-      if (!r.Text) return json(200, { code: 3, message: 'ASR未识别到内容: ' + JSON.stringify(resp).slice(0, 200) });
-      return json(200, { code: 0, text: r.Text });
+      if (!r.Result) return json(200, { code: 3, message: 'ASR未识别到内容: ' + JSON.stringify(resp).slice(0, 200) });
+      return json(200, { code: 0, text: r.Result });
     } catch (err) {
       return json(200, { code: 4, message: '语音识别失败: ' + err.message });
     }
