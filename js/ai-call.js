@@ -354,13 +354,11 @@ function aiCallConnect() {
     aiSpeak(greet);
   }
 
-  // 按住说话按钮复位；真实模式显示「开启声音」浮层（iOS 远端音频需一次点击激活）
-  const tb = document.getElementById('aicTextbar');
-  if (tb) tb.style.display = 'flex';
-  const tk = document.getElementById('aicTalkBtn');
-  if (tk) { tk.textContent = '按住 说话'; tk.classList.remove('rec'); }
+  // 聆听指示复位；显示「开启语音对话」浮层（iOS 需一次用户点击激活音频+麦克风）
+  const lst = document.getElementById('aicListen');
+  if (lst) lst.style.display = 'none';
   const ul = document.getElementById('aicAudioUnlock');
-  if (ul) ul.style.display = aiCallReal ? 'flex' : 'none';
+  if (ul) ul.style.display = 'flex';
 
   // 开启"听"（支持的设备用语音识别；纯视频对话，无快捷回复）
   if (aiSRSupported()) {
@@ -370,6 +368,8 @@ function aiCallConnect() {
 
 // ===== AI 说话（真实模式=云驱动口型；演示模式=本地语音合成） =====
 function aiSpeak(text) {
+  // 她说话期间暂停聆听（按字数估算时长+缓冲），防止扬声器声音被当成你的话
+  aiDeafUntil = Date.now() + String(text).length * 380 + 2500;
   // 通话里 TA 说的话自动写入记忆库
   if (aiCallState === 'connected' && aiCallChar) memAdd(aiCallChar.id, text, 'ai');
   if (aiCallReal) return ivhSpeak(text);
@@ -615,86 +615,121 @@ async function aiUnlockAudio() {
   if (lbl) lbl.textContent = '扬声器已开';
   // 重发开场白（之前那次可能被静音吞掉）
   if (aiCallState === 'connected' && aiCallChar) aiSpeak(aiGreeting(aiCallChar));
+  // 开启全时聆听：之后直接说话即可，她自动听、自动答（微信视频式）
+  aiListenStart();
 }
 
-// ===== 按住说话（微信式语音问答：录音→云ASR识别→大模型回答→她开口说） =====
-let aiRec = null, aiRecChunks = [], aiRecMime = '';
+// ===== 全时语音对话（微信视频式：直接说话，自动断句识别，她回答完再问下一句） =====
+let aiVad = null;          // { stream, ctx, proc, buf, speaking, silence, len }
+let aiDeafUntil = 0;       // 她说话期间不听（防扬声器声音被识别成你的话）
 
-function aiTalkFormat() {
-  const m = aiRecMime || '';
-  if (m.indexOf('mp4') > -1 || m.indexOf('aac') > -1) return 'm4a';
-  if (m.indexOf('ogg') > -1 || m.indexOf('webm') > -1) return 'ogg-opus';
-  return 'mp3';
+function aiListenUI(state) {
+  const el = document.getElementById('aicListen');
+  if (!el) return;
+  if (state === 'on') { el.textContent = '● 正在聆听，请说话…'; el.style.display = 'block'; }
+  else if (state === 'hearing') { el.textContent = '● 听你说话…'; el.style.display = 'block'; }
+  else { el.style.display = 'none'; }
 }
 
-async function aiTalkStart(e) {
-  if (e) e.preventDefault();
-  if (aiCallState !== 'connected' || aiRec) return;
-  const btn = document.getElementById('aicTalkBtn');
-  if (!window.MediaRecorder) { showToast('该手机不支持录音'); return; }
-  let stream;
+// Float32 → 16k 单声道 WAV（浏览器端编码，云函数一句话识别）
+function aiFloatToWav(samples, srcRate) {
+  const ratio = srcRate / 16000;
+  const outLen = Math.floor(samples.length / ratio);
+  const buf = new ArrayBuffer(44 + outLen * 2);
+  const v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + outLen * 2, true); w(8, 'WAVE');
+  w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 16000, true); v.setUint32(28, 32000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, 'data'); v.setUint32(40, outLen * 2, true);
+  for (let i = 0; i < outLen; i++) {
+    let s = Math.max(-1, Math.min(1, samples[Math.floor(i * ratio)] || 0));
+    v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return buf;
+}
+
+async function aiListenStart() {
+  if (aiVad || !navigator.mediaDevices) return;
+  let stream, ctx;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch (err) {
-    showToast('无法访问麦克风，请检查权限');
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    try { ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 }); }
+    catch (e) { ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+    if (ctx.state === 'suspended') { try { await ctx.resume(); } catch (e) {} }
+  } catch (e) {
+    aiLog('麦克风打开失败: ' + (e.message || e));
+    showToast('麦克风未授权，无法语音对话');
     return;
   }
-  aiRecChunks = [];
-  let mime = '';
-  const candidates = ['audio/mp4', 'audio/aac', 'audio/webm;codecs=opus', 'audio/webm'];
-  for (const t of candidates) { try { if (MediaRecorder.isTypeSupported(t)) { mime = t; break; } } catch (x) {} }
-  try {
-    aiRec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
-  } catch (x) {
-    try { aiRec = new MediaRecorder(stream); } catch (y) { stream.getTracks().forEach(t => t.stop()); aiRec = null; showToast('录音启动失败'); return; }
-  }
-  aiRecMime = aiRec.mimeType || mime || '';
-  aiRec.ondataavailable = (ev) => { if (ev.data && ev.data.size) aiRecChunks.push(ev.data); };
-  aiRec.onstop = () => {
-    stream.getTracks().forEach(t => t.stop());
-    const blob = new Blob(aiRecChunks, { type: aiRecMime || 'audio/mp4' });
-    aiRec = null;
-    btn.textContent = '按住 说话';
-    btn.classList.remove('rec');
-    if (blob.size < 2000) { showToast('说话时间太短，再试一次'); return; }
-    aiTalkRecognize(blob);
-  };
-  aiRec.start();
-  btn.textContent = '松开 结束';
-  btn.classList.add('rec');
-  aiRec._max = setTimeout(() => { if (aiRec) aiTalkStop(); }, 60000);   // 最长60秒
-}
-
-function aiTalkStop() {
-  if (!aiRec) return;
-  clearTimeout(aiRec._max);
-  const btn = document.getElementById('aicTalkBtn');
-  if (btn) btn.textContent = '识别中…';
-  try { aiRec.stop(); } catch (e) { aiRec = null; if (btn) btn.textContent = '按住 说话'; }
-}
-
-async function aiTalkRecognize(blob) {
-  const btn = document.getElementById('aicTalkBtn');
-  try {
-    const buf = new Uint8Array(await blob.arrayBuffer());
-    let bin = '';
-    for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
-    const b64 = btoa(bin);
-    const base = (TRTC_CONFIG.ivhServer || '').replace(/\/+$/, '');
-    const resp = await fetchTPost(base + '?action=asr', { format: aiTalkFormat(), audio: b64 }, 25000);
-    const d = await resp.json().catch(() => ({}));
-    if (d.code !== 0 || !d.text) {
-      showToast(d.message || '没听清，再试一次');
-      if (btn) btn.textContent = '按住 说话';
-      return;
+  const st = { stream, ctx, buf: [], speaking: false, silence: 0, len: 0 };
+  aiVad = st;
+  const src = ctx.createMediaStreamSource(stream);
+  const proc = ctx.createScriptProcessor(4096, 1, 1);
+  st.proc = proc;
+  proc.onaudioprocess = (ev) => {
+    if (!aiVad || st !== aiVad) return;
+    const inp = ev.inputBuffer.getChannelData(0);
+    if (Date.now() < aiDeafUntil) return;   // 她正在说话，暂停聆听防回声
+    let sum = 0;
+    for (let i = 0; i < inp.length; i++) sum += inp[i] * inp[i];
+    const rms = Math.sqrt(sum / inp.length);
+    if (!st.speaking) {
+      if (rms > 0.015) {
+        st.speaking = true; st.buf = [new Float32Array(inp)]; st.len = inp.length; st.silence = 0;
+        aiListenUI('hearing');
+      }
+    } else {
+      st.buf.push(new Float32Array(inp)); st.len += inp.length;
+      if (rms > 0.015) st.silence = 0;
+      else st.silence += inp.length / ctx.sampleRate * 1000;
+      const ms = st.len / ctx.sampleRate * 1000;
+      // 静音超过 0.9 秒（且说了至少 0.9 秒）= 一句话说完了；或最长 20 秒强制截断
+      if ((st.silence > 900 && ms > 900) || ms > 20000) {
+        st.speaking = false; st.silence = 0;
+        const all = new Float32Array(st.len);
+        let off = 0;
+        for (const c of st.buf) { all.set(c, off); off += c.length; }
+        st.buf = []; st.len = 0;
+        aiListenUI('on');
+        aiUtterance(all, ctx.sampleRate);
+      }
     }
-    aiShowUserBubble(d.text);
-    const reply = await aiReplySmart(d.text);
-    if (btn) btn.textContent = '按住 说话';
-    aiSpeak(reply);
+  };
+  src.connect(proc);
+  proc.connect(ctx.destination);
+  aiListenUI('on');
+  aiLog('全时聆听已开启 ✓');
+}
+
+function aiListenStop() {
+  if (!aiVad) return;
+  const st = aiVad; aiVad = null;
+  try { st.proc.disconnect(); st.stream.getTracks().forEach(t => t.stop()); st.ctx.close(); } catch (e) {}
+  aiListenUI('off');
+}
+
+// 一句话说完了：送云 ASR 识别 → 大模型回答 → 她开口说
+async function aiUtterance(samples, rate) {
+  const ms = samples.length / rate * 1000;
+  if (ms < 700) return;   // 太短当杂音忽略
+  const wav = aiFloatToWav(samples, rate);
+  const u8 = new Uint8Array(wav);
+  let bin = '';
+  for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  const base = (TRTC_CONFIG.ivhServer || '').replace(/\/+$/, '');
+  try {
+    const resp = await fetchTPost(base + '?action=asr', { format: 'wav', audio: btoa(bin) }, 25000);
+    const d = await resp.json().catch(() => ({}));
+    if (d.code === 0 && d.text) {
+      aiShowUserBubble(d.text);
+      const reply = await aiReplySmart(d.text);
+      aiSpeak(reply);
+    } else if (d.message) {
+      aiLog('识别: ' + String(d.message).slice(0, 60));
+    }
   } catch (e) {
-    showToast('识别失败：' + (e.message || e));
-    if (btn) btn.textContent = '按住 说话';
+    aiLog('识别失败: ' + (e.message || e));
   }
 }
 
@@ -703,18 +738,6 @@ async function aiTalkRecognize(blob) {
   const b = document.getElementById('aicHangupBtn');
   if (!b) return;
   b.addEventListener('touchend', (e) => { e.preventDefault(); aiHangup(); }, { passive: false });
-})();
-
-// 绑定按住说话事件（touch 优先，桌面鼠标兜底）
-(function bindTalk() {
-  const b = document.getElementById('aicTalkBtn');
-  if (!b) return;
-  b.addEventListener('touchstart', (e) => { e.preventDefault(); aiTalkStart(); }, { passive: false });
-  b.addEventListener('touchend', (e) => { e.preventDefault(); aiTalkStop(); }, { passive: false });
-  b.addEventListener('touchcancel', () => aiTalkStop());
-  b.addEventListener('mousedown', () => { if (!('ontouchstart' in window)) aiTalkStart(); });
-  b.addEventListener('mouseup', () => { if (!('ontouchstart' in window)) aiTalkStop(); });
-  b.addEventListener('mouseleave', () => { if (aiRec && !('ontouchstart' in window)) aiTalkStop(); });
 })();
 
 /* ============================================
@@ -889,7 +912,6 @@ function aiHangup() {
     aiCallState = 'ended';
     aiStopRecognition();
     if ('speechSynthesis' in window) speechSynthesis.cancel();
-    if (aiRec) { try { clearTimeout(aiRec._max); aiRec.stop(); } catch (e) {} aiRec = null; }
     if (aiLocalStream) { aiLocalStream.getTracks().forEach(t => t.stop()); aiLocalStream = null; }
     if (aiCallTimer) { clearInterval(aiCallTimer); aiCallTimer = null; }
     if (aiIvhPollTimer) { clearInterval(aiIvhPollTimer); aiIvhPollTimer = null; }
@@ -911,9 +933,10 @@ function aiHangup() {
   } catch (e) { /* 清理异常不阻塞返回 */ }
   // 兜底清理（必须执行）
   try {
+    aiListenStop();   // 停止全时聆听
     document.getElementById('aiCallScreen').style.display = 'none';
-    const tb = document.getElementById('aicTextbar');
-    if (tb) tb.style.display = 'none';
+    const lst = document.getElementById('aicListen');
+    if (lst) lst.style.display = 'none';
     const ul = document.getElementById('aicAudioUnlock');
     if (ul) ul.style.display = 'none';
     document.getElementById('aicSubtitle').style.display = 'none';
