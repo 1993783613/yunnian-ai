@@ -309,7 +309,7 @@ exports.main_handler = async (event) => {
     const format = body.format || 'wav';
     if (!audio) return json(400, { code: 1, message: '缺少 audio(base64) 参数' });
     try {
-      const resp = await tc3Post('asr.cloud.tencent.com', 'asr', '2019-06-14', 'SentenceRecognition', {
+      const resp = await tc3Post('asr.tencentcloudapi.com', 'asr', '2019-06-14', 'SentenceRecognition', {
         ProjectId: 0,
         SubServiceType: 2,
         EngSerViceType: '16k_zh',
