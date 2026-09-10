@@ -27,6 +27,7 @@ let aiSpeaking = false;
 let aiCallReal = false;         // true=真实数字人（IVH云渲染）；false=演示模式
 let aiIvhSessionId = '';
 let aiIvhTrtc = null;           // 拉数字人流的 TRTC 实例
+let aiIvhRemoteUserId = '';     // 数字人在房间里的 userId（扬声器静音用）
 let aiIvhPollTimer = null;
 const AI_CALL_VER = '20260910d'; // 通话模块版本（排查缓存用）
 let aiConnectGuard = false;     // 防止重复接通
@@ -227,6 +228,10 @@ async function aiIvhCallFlow() {
       aiLog('渲染失败: ' + (e.message || e));
     }
   });
+  aiIvhTrtc.on(TRTC.EVENT.REMOTE_USER_ENTER, (ev) => {
+    aiIvhRemoteUserId = ev.userId;   // 记住远端用户，供扬声器静音用
+    aiLog('数字人已进房: ' + ev.userId);
+  });
   aiIvhTrtc.on(TRTC.EVENT.ERROR, (err) => aiLog('TRTC错误: ' + (err.message || err)));
   await aiIvhTrtc.enterRoom({
     roomId: r1.roomId,
@@ -249,8 +254,10 @@ async function aiIvhCallFlow() {
   }
   if (!ready) throw new Error('数字人加载超时');
 
-  // 4. 开启会话 → 显示通话界面（开场白由 aiCallConnect 内部驱动）
+  // 4. 开启会话 → 等引擎就绪 → 显示通话界面（开场白延迟发出，避免驱动过早被吞）
   await fetchT(base + '?action=start&sessionId=' + r1.sessionId, 10000);
+  aiLog('会话已开启，2秒后接通');
+  await aiSleep(2000);
   aiConnectOnce();
 }
 
@@ -263,18 +270,26 @@ function aiLog(msg) {
   while (box.children.length > 6) box.removeChild(box.firstChild);
 }
 
-// ===== 真实数字人说话（云驱动：TTS + 口型同步） =====
+// ===== 真实数字人说话（云驱动：TTS + 口型同步；带超时/结果校验/失败重试一次） =====
 async function ivhSpeak(text) {
   const sub = document.getElementById('aicSubtitle');
   sub.textContent = text;
   sub.style.display = 'block';
   clearTimeout(ivhSpeak._t);
   ivhSpeak._t = setTimeout(() => { sub.style.display = 'none'; }, 8000);
+  if (!aiIvhSessionId) { aiLog('驱动跳过：无会话'); return; }
+  const base = TRTC_CONFIG.ivhServer.replace(/\/+$/, '');
+  const doDrive = async () => {
+    const resp = await fetchT(base + '?action=drive&sessionId=' + aiIvhSessionId + '&text=' + encodeURIComponent(text), 10000);
+    const d = await resp.json().catch(() => ({}));
+    return d.code === 0;
+  };
   try {
-    const base = TRTC_CONFIG.ivhServer.replace(/\/+$/, '');
-    await fetch(base + '?action=drive&sessionId=' + aiIvhSessionId + '&text=' + encodeURIComponent(text));
+    let ok = await doDrive();
+    if (!ok) { aiLog('驱动失败，2秒后重试'); await aiSleep(2000); ok = await doDrive(); }
+    aiLog(ok ? '驱动成功 ✓' : '驱动仍失败（看云函数日志）');
   } catch (e) {
-    aiLog('驱动失败: ' + (e.message || e));
+    aiLog('驱动异常: ' + (e.message || e));
   }
 }
 
@@ -331,11 +346,19 @@ function aiCallConnect() {
     }
   }, 1000);
 
-  // 开口第一句（数字人主动说话）
+  // 开口第一句（真实模式延迟2.5秒发，给引擎启动口型/配音的时间）
   const greet = aiGreeting(aiCallChar);
-  aiSpeak(greet);
+  if (aiCallReal) {
+    setTimeout(() => { if (aiCallState === 'connected') aiSpeak(greet); }, 2500);
+  } else {
+    aiSpeak(greet);
+  }
 
-  // 开启"听"（支持的设备用语音识别；纯视频对话，无打字/快捷回复）
+  // 通话中显示"对她说"输入框（打字=可靠问答通道）
+  const tb = document.getElementById('aicTextbar');
+  if (tb) { tb.style.display = 'flex'; document.getElementById('aicTextInput').value = ''; }
+
+  // 开启"听"（支持的设备用语音识别；纯视频对话，无快捷回复）
   if (aiSRSupported()) {
     aiStartRecognition();
   }
@@ -570,6 +593,22 @@ async function aiReplySmart(text) {
   return aiReply(text);
 }
 
+// ===== 通话中打字对话：我问什么她答什么（真实模式=云驱动开口；演示模式=本地语音） =====
+let aiTextBusy = false;
+async function aiSendText() {
+  if (aiCallState !== 'connected' || aiTextBusy) return;
+  const inp = document.getElementById('aicTextInput');
+  if (!inp) return;
+  const text = (inp.value || '').trim();
+  if (!text) return;
+  aiTextBusy = true;
+  inp.value = '';
+  aiShowUserBubble(text);
+  const reply = await aiReplySmart(text);
+  aiSpeak(reply);
+  aiTextBusy = false;
+}
+
 /* ============================================
    微信式文字聊天页（角色卡「聊天」按钮进入）
    你打字发一句，TA 打字回一句；聊天记录持久化，
@@ -754,10 +793,13 @@ function aiHangup() {
       aiIvhTrtc = null;
     }
     aiIvhSessionId = '';
+    aiIvhRemoteUserId = '';
     aiCallReal = false;
   }
   aiSetCardCalling(false);
   document.getElementById('aiCallScreen').style.display = 'none';
+  const tb = document.getElementById('aicTextbar');
+  if (tb) tb.style.display = 'none';
   document.getElementById('aicSubtitle').style.display = 'none';
   document.getElementById('aicUserBubble').style.display = 'none';
   navigate('library');
@@ -779,6 +821,11 @@ window.addEventListener('beforeunload', () => {
 let aiSpeakerOn = true;
 async function aiToggleSpeaker() {
   aiSpeakerOn = !aiSpeakerOn;
+  // 真实模式：走 TRTC 正规远端静音接口（v5 播放走 WebAudio，video.muted 无效）
+  if (aiCallReal && aiIvhTrtc && aiIvhRemoteUserId) {
+    try { await aiIvhTrtc.muteRemoteAudio(aiIvhRemoteUserId, !aiSpeakerOn); } catch (e) { aiLog('静音失败: ' + (e.message || e)); }
+  }
+  // 演示模式：静音页面里的音视频元素
   document.querySelectorAll('#aiCallScreen video, #aiCallScreen audio').forEach(v => { v.muted = !aiSpeakerOn; });
   const lbl = document.getElementById('spkCtlLabel');
   if (lbl) lbl.textContent = aiSpeakerOn ? '扬声器已开' : '扬声器已关';
