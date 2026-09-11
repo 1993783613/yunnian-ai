@@ -21,8 +21,21 @@
 
 const tls = require('tls-sig-api-v2');
 const https = require('https');
-const { MsEdgeTTS, OUTPUT_FORMAT } = require('msedge-tts');
-const { MPEGDecoder } = require('mpg123-decoder');
+// 关键：msedge-tts / mpg123-decoder 改为「懒加载」（在 speak 路径内才 require），
+// 避免 SCF Node16/18 运行时因顶层 require 失败导致整个函数 443 崩溃（连 usersig 都挂）。
+let _MsEdgeTTS, _OUTPUT_FORMAT, _MPEGDecoder;
+function loadTts() {
+  if (!_MsEdgeTTS) {
+    const m = require('msedge-tts');
+    _MsEdgeTTS = m.MsEdgeTTS;
+    _OUTPUT_FORMAT = m.OUTPUT_FORMAT;
+  }
+  return { MsEdgeTTS: _MsEdgeTTS, OUTPUT_FORMAT: _OUTPUT_FORMAT };
+}
+function loadMpg() {
+  if (!_MPEGDecoder) _MPEGDecoder = require('mpg123-decoder').MPEGDecoder;
+  return _MPEGDecoder;
+}
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -70,6 +83,7 @@ function ivhWssUrl(path, sessionId) {
 // ===== Edge-TTS 合成音频，返回 MP3 Buffer =====
 // 音色：zh-CN-YunxiNeural（云希，年轻男声，适合「二大爷」的亲切邻家感）
 async function edgeTts(text) {
+  const { MsEdgeTTS, OUTPUT_FORMAT } = loadTts();
   const tts = new MsEdgeTTS();
   const voice = process.env.TTS_VOICE || 'zh-CN-YunxiNeural';
   await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
@@ -82,6 +96,7 @@ async function edgeTts(text) {
 
 // ===== 纯 JS 转码：MP3 -> PCM 16kHz 16bit 单声道（mpg123-decoder 解码 + 线性重采样） =====
 async function mp3ToPcm(mp3Buf) {
+  const MPEGDecoder = loadMpg();
   const decoder = new MPEGDecoder();
   await decoder.ready;
   const decoded = decoder.decode(mp3Buf);
@@ -109,7 +124,8 @@ function sendAudioViaWss(sessionId, pcmBuf) {
   return new Promise((resolve, reject) => {
     const wsUrl = ivhWssUrl('/v2/ws/ivh/streammanager/streamservice/commandchannel', sessionId);
     if (!wsUrl) return reject(new Error('未配置 IVH_APPKEY / IVH_ACCESSTOKEN'));
-    const WebSocket = globalThis.WebSocket;
+    // SCF Node16/18 没有 globalThis.WebSocket，统一用 ws 库（已作为 msedge-tts 的传递依赖存在）
+    const WebSocket = globalThis.WebSocket || require('ws');
     const ws = new WebSocket(wsUrl);
     const reqId = uuid32();
     const CHUNK = 5120; // 160ms
