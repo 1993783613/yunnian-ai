@@ -29,7 +29,7 @@ let aiIvhSessionId = '';
 let aiIvhTrtc = null;           // 拉数字人流的 TRTC 实例
 let aiIvhRemoteUserId = '';     // 数字人在房间里的 userId（扬声器静音用）
 let aiIvhPollTimer = null;
-const AI_CALL_VER = '20260910d'; // 通话模块版本（排查缓存用）
+const AI_CALL_VER = '20260912c'; // 通话模块版本（排查缓存用）
 let aiConnectGuard = false;     // 防止重复接通
 let aiWatchdog = null;          // 总看门狗：无论卡在哪一步，超时强制接通演示模式
 
@@ -167,15 +167,16 @@ async function aiCallGo() {
   aiLog('通话模块 v' + AI_CALL_VER);
   showToast('通话模块 v' + AI_CALL_VER);   // 用于确认手机加载的是新版本（非缓存旧版）
 
-  // ★ 总看门狗：40 秒内无论卡在哪一步（权限弹窗/云函数/TRTC），强制接通演示模式
+  // ★ 总看门狗：200 秒（覆盖 create+进房+status轮询120秒+start 全流程），卡住才强制演示模式
   if (aiWatchdog) clearTimeout(aiWatchdog);
   aiWatchdog = setTimeout(() => {
-    if (aiCallState === 'calling' && !aiConnectGuard) {
+    // 真实数字人流程正在跑（aiCallReal=true 且已有会话），不要抢占，交给它自己的 120 秒轮询
+    if (aiCallState === 'calling' && !aiConnectGuard && !aiIvhSessionId) {
       aiLog('看门狗触发：连接超时，强制进入演示模式');
       showToast('接连超时，已切换演示模式');
       aiConnectOnce();
     }
-  }, 40000);
+  }, 200000);
 
   // 卡片按钮变「呼叫中…」
   aiSetCardCalling(true);
@@ -248,14 +249,17 @@ async function aiIvhCallFlow() {
   document.getElementById('aicPhaseSub').textContent = '正在唤醒数字人…';
 
   // 1. 创建会话（云端加载形象并推流到 TRTC 房间）— action 放进 POST body（规避网关吞查询参数）
+  aiLog('① 开始创建会话…');
   const r1 = await cfPost('create', {}, 15000).then(r => r.json());
   if (r1.code !== 0) throw new Error(r1.message || '创建会话失败');
   aiIvhSessionId = r1.sessionId;
-  aiLog('会话已创建 ' + r1.sessionId + '，房间 ' + r1.roomId);
+  aiLog('② 会话已创建 ' + r1.sessionId + '，房间 ' + r1.roomId + '，status=' + r1.sessionStatus);
 
   // 2. 进入 TRTC 房间拉数字人的流
   const myId = 'v_' + Math.random().toString(36).slice(2, 8);
+  aiLog('③ 获取进房凭证 ' + myId + '…');
   const sigResp = await getUserSig(myId);
+  aiLog('④ 凭证已获取，创建 TRTC 客户端…');
   aiIvhTrtc = TRTC.create();
   aiIvhTrtc.on(TRTC.EVENT.REMOTE_VIDEO_AVAILABLE, async (ev) => {
     aiLog('收到数字人视频流，开始渲染…');
@@ -292,7 +296,7 @@ async function aiIvhCallFlow() {
     userSig: sigResp,
     scene: 'rtc'
   });
-  aiLog('已进入数字人房间');
+  aiLog('⑤ 已进入数字人房间 ' + r1.roomId);
 
   // 3. 等待流就绪（最多 120 秒）
   document.getElementById('aicPhaseMain').textContent = '正在接通…';
@@ -302,13 +306,14 @@ async function aiIvhCallFlow() {
     if (aiCallState !== 'calling') return;
     await aiSleep(3000);
     const r3 = await cfPost('status', { sessionId: r1.sessionId }, 10000).then(x => x.json());
+    aiLog('⑥ 轮询状态 ' + (i + 1) + '/40：status=' + r3.sessionStatus + ' code=' + r3.code);
     if (r3.code === 0 && r3.sessionStatus === 1) { ready = true; break; }
   }
   if (!ready) throw new Error('数字人加载超时');
 
   // 4. 开启会话 → 等引擎就绪 → 显示通话界面（开场白延迟发出，避免驱动过早被吞）
   await cfPost('start', { sessionId: r1.sessionId }, 10000);
-  aiLog('会话已开启，2秒后接通');
+  aiLog('⑦ 会话已开启，2秒后接通');
   await aiSleep(2000);
   aiConnectOnce();
 }
