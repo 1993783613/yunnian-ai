@@ -4,3 +4,25 @@ __pycache__/
 Thumbs.db
 .workbuddy/
 *.zip
+
+# 依赖包（体积大且不该入库，EdgeOne 部署时也会被 buildCommand 清理）
+node_modules/
+
+# 本地调试产物（不随静态站部署）
+video-frames/
+video-frames-lead/
+video-frames-ref/
+ui-design/
+
+# 云函数打包产物（源码在 cloud-function/，这些只是打包副本）
+yunnian-usersig-scf-v*/
+
+# 发布包（每次部署临时生成，不入库）
+dist/
+
+# 竞品站点抓取/调试产生的临时文件
+/App.js
+/yunnian.css
+/yunnian.js
+/extract_frames.py
+/zoom.py
