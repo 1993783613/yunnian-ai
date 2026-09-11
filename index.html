@@ -341,8 +341,12 @@
         <div class="form-field" data-page-node-id="kUdjiumxyZ5VmLZD9JcZgC"><label class="form-label" data-page-node-id="t5porK1Lu2UqQFcoFum7eM">姓名</label><input class="form-input" type="text" id="createName" placeholder="只填写角色名字，例如：瑶瑶的奶奶" data-page-node-id="CBGQGiU6Wqr98rynM8fWAP"></div>
         <div class="form-field" data-page-node-id="0vcZZ90pijbQLtdTe4RHkh"><label class="form-label" data-page-node-id="N3KcVnSXK0ZG25u097nB5k">年龄</label><input class="form-input" type="number" id="createAge" placeholder="大概年龄，例如：55" data-page-node-id="8ufYf7SU6p5nuj4fVXcGSw"></div>
         <div class="form-field" data-page-node-id="ScitLy98IyioB8nIkLBaPL"><label class="form-label" data-page-node-id="GMAM7zYwvhHAjdENd5WSeV">身份</label><input class="form-input" type="text" placeholder="例如：已故的亲人" data-page-node-id="UjgHyFll1lSEaS9W3Z7Mp5"></div>
-        <div class="form-field" data-page-node-id="on2NbWhBjfT8iH2KFWjhgo"><label class="form-label" data-page-node-id="uaaIggI8KDTt0XObszAKu4">性格</label><input class="form-input" type="text" placeholder="用 2–3 个形容词描述，例如：勤劳，善良，喜欢聊天话多" data-page-node-id="yvK4FS33VFwRBeYMBVViky"></div>
+        <div class="form-field" data-page-node-id="on2NbWhBjfT8iH2KFWjhgo"><label class="form-label" data-page-node-id="uaaIggI8KDTt0XObszAKu4">性格 <span style="color:var(--text-muted);font-weight:400">（选填）</span></label><input class="form-input" type="text" id="createPersonality" placeholder="决定 TA 说话的味道，例如：倔强、要强、嘴硬心软、爱操心" data-page-node-id="yvK4FS33VFwRBeYMBVViky"></div>
         <div class="form-field" data-page-node-id="C4s3He9H8DHEEYhnf9IDx5"><label class="form-label" data-page-node-id="RDQCHW3T1yNYHB0Mmp6AXF">与用户关系</label><textarea class="form-textarea" id="createRelation" placeholder="说明关系、亲密度和彼此称呼，例如：我的外婆喜欢叫我瑶瑶"></textarea></div>
+        <div class="form-field"><label class="form-label">说话方式与口头禅 <span style="color:var(--text-muted);font-weight:400">（选填）</span></label><input class="form-input" type="text" id="createSpeaking" placeholder="例如：爱说「你呀」，带方言味，讲话爱用比喻，急起来会提高嗓门"><div class="form-example">填了以后，TA 开口就是这个味儿</div></div>
+        <div class="form-field"><label class="form-label">TA 怎么称呼你 <span style="color:var(--text-muted);font-weight:400">（选填）</span></label><input class="form-input" type="text" id="createCallUser" placeholder="你的小名或 TA 对你的叫法，例如：瑶瑶、丫头、小子"><div class="form-example">不填就用亲人的通用称呼</div></div>
+        <div class="form-field"><label class="form-label">你们的共同经历 <span style="color:var(--text-muted);font-weight:400">（选填）</span></label><textarea class="form-textarea" id="createStory" placeholder="只有你们两个人才知道的事，例如：小时候常带他去河边钓鱼、总在柜子里偷偷给他留糖、冬天替他捂手"></textarea><div class="form-example">写得越具体，TA 聊天时越像本人</div></div>
+        <div class="form-field"><label class="form-label">TA 生前最操心的事 <span style="color:var(--text-muted);font-weight:400">（选填）</span></label><textarea class="form-textarea" id="createCares" placeholder="TA 活着时反复念叨、放心不下的事，例如：总怕他不好好吃饭、惦记他的工作稳不稳、担心他一个人不会照顾自己"></textarea><div class="form-example">TA 会自己忍不住把这事提出来</div></div>
       </div>
       <div class="create-section" data-page-node-id="hjqaU5SxbFntw0uUJHNvxd">
         <div class="create-section-title" data-page-node-id="x5e6z6sRvFBnn4R2GzCEwJ"><span class="num" data-page-node-id="sjX62PkFETdkswrtjICBdn">3</span> 音色</div>
@@ -893,8 +897,8 @@
         onerror="var s=document.createElement('script');s.src='https://unpkg.com/trtc-sdk-v5@latest/trtc.js';document.head.appendChild(s);"></script>
 <script src="./js/config.js?v=20260911e"></script>
 <script src="./js/site-data.js?v=20260906i"></script>
-<script src="./js/app.js?v=20260910f"></script>
+<script src="./js/app.js?v=20260912a"></script>
 <script src="./js/trtc-call.js?v=20260911e"></script>
-<script src="./js/ai-call.js?v=20260911e"></script>
+<script src="./js/ai-call.js?v=20260912a"></script>
 </body>
 </html>

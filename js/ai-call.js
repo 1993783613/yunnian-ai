@@ -43,8 +43,22 @@ function aiFmt(sec) {
 function aiFindChar(id) {
   // 内置平台示例角色
   const DEMO = {
-    demo_grandma: { id: 'demo_grandma', name: '瑶瑶的奶奶', age: '72', relation: '我的外婆', voice: '和蔼奶奶', photo: '', createdAt: 0 },
-    demo_grandpa: { id: 'demo_grandpa', name: '阿哲的爷爷', age: '75', relation: '最疼我的爷爷', voice: '慈祥爷爷', photo: '', createdAt: 0 }
+    demo_grandma: {
+      id: 'demo_grandma', name: '瑶瑶的奶奶', age: '72', relation: '我的外婆', voice: '和蔼奶奶', photo: '', createdAt: 0,
+      personality: '嘴硬心软，心疼人全往心里搁，嘴上总不饶人',
+      speaking: '开口就是「你呀」，爱拿吃的打比方，说着说着会叹气',
+      callUser: '瑶瑶',
+      story: '小时候带她去河边钓鱼，她总钓不着就哭；柜子最里头常年给她留着糖',
+      cares: '怕她不好好吃饭、一个人熬夜，怕她报喜不报忧'
+    },
+    demo_grandpa: {
+      id: 'demo_grandpa', name: '阿哲的爷爷', age: '75', relation: '最疼我的爷爷', voice: '慈祥爷爷', photo: '', createdAt: 0,
+      personality: '倔强、要强，认死理，不服老，嘴上严厉心里软',
+      speaking: '话不多但句句有分量，急起来会提高嗓门，爱拿年轻时候的事举例子',
+      callUser: '阿哲',
+      story: '小时候带他去后山捡栗子，一路教他认树认虫子；他的第一辆自行车是爷爷攒了半年买的',
+      cares: '惦记他的工作稳不稳，怕他为了挣钱把身体熬坏，怕他遇事自己扛着不说'
+    }
   };
   if (DEMO[id]) return DEMO[id];
   let chars = [];
@@ -476,59 +490,161 @@ function memMatch(text, mems) {
   return null;
 }
 
+// ===== 人设档案 =====
+// 老角色数据没有 personality/speaking/callUser/story/cares 字段，
+// 这里统一做安全取值 + 默认回退，保证任何字段缺失都不会出现 undefined / 崩溃。
+const AI_PERSONA_DEFAULT = {
+  personality: '朴实、话不多，但心里有数',
+  speaking: '像家里长辈拉家常那样说话，句子短，偶尔带点方言味',
+  callUser: '',
+  story: '',
+  cares: ''
+};
+
+/**
+ * 读取角色的人设档案，缺失字段用默认值兜底。
+ * @param {Object|null} char 角色对象（可能为老结构，字段不全）
+ * @returns {{name:string, relation:string, personality:string, speaking:string, callUser:string, story:string, cares:string}}
+ */
+function aiPersona(char) {
+  const c = char || {};
+  // 只接受字符串/有限数字；对象、数组、布尔、null 一律当作「未填写」，
+  // 避免脏数据（手工改过的 localStorage）把 [object Object] 拼进 prompt
+  const str = (v) => {
+    if (typeof v === 'string') return v.trim();
+    if (typeof v === 'number' && isFinite(v)) return String(v).trim();
+    return '';
+  };
+  const relation = str(c.relation).replace(/^我的/, '') || '亲人';
+  return {
+    name: str(c.name) || '亲人',
+    relation: relation,
+    personality: str(c.personality) || AI_PERSONA_DEFAULT.personality,
+    speaking: str(c.speaking) || AI_PERSONA_DEFAULT.speaking,
+    callUser: str(c.callUser) || AI_PERSONA_DEFAULT.callUser,
+    story: str(c.story) || AI_PERSONA_DEFAULT.story,
+    cares: str(c.cares) || AI_PERSONA_DEFAULT.cares
+  };
+}
+
+/**
+ * 拼装 LLM system prompt：人设档案驱动，让 TA 有自己的立场和主张。
+ * @param {Object|null} char 角色对象
+ * @param {string} memsBlock 记忆文本块（可为空）
+ * @returns {string} system prompt
+ */
+function aiBuildSystemPrompt(char, memsBlock) {
+  const p = aiPersona(char);
+  const L = [];
+
+  // ① 身份：明确"我是一个人"，而不是服务
+  L.push('你是' + p.name + '，是这个家里已经走了的' + p.relation + '。');
+  L.push('现在你就在电话这头，跟家人说话。你就是你本人，一个有脾气、有主张、有记性的人，');
+  L.push('不是客服，不是问答机器人，也不是谁的助手。');
+  L.push('');
+
+  // ② 人设档案
+  L.push('【你是什么样的人】');
+  L.push('- 你的性格：' + p.personality);
+  L.push('- 你说话的样子：' + p.speaking);
+  if (p.callUser) L.push('- 你平时这么称呼对方：' + p.callUser);
+  if (p.story) L.push('- 你们一起经历过的事：' + p.story);
+  if (p.cares) L.push('- 你在世时最放不下、最操心的事：' + p.cares);
+  L.push('');
+
+  // ③ 最关键：自己的想法
+  L.push('【最重要的一条：你有你自己的想法】');
+  L.push('- 你不是为了答题才开口的。对方说一件事，你先有自己的反应：');
+  L.push('  听着高兴就痛快说高兴，不认同就直接讲「我可不这么想」「你这想法不对」，');
+  L.push('  觉得他瞎折腾就数落他两句，觉得他不容易就叹口气心疼他。');
+  L.push('- 你会唠叨，会跑题，会突然想起别的旧事，会把自己放在心上的事主动提出来念叨，');
+  L.push('  会反问回去，会因为一句话较真——这些都是对的，这才像活人说话。');
+  L.push('- 严禁使用「先把话说清楚、最后再补一句关心」的客套模板。');
+  L.push('  例如「……所以要注意身体哦」「……你要照顾好自己呀」这类结尾一律不许出现，');
+  L.push('  这是最假的说法。关心要长在你自己的话里；这一句不想关心，那就不关心。');
+  L.push('- 不要重复对方的问题，不要复述对方的话，不要做总结。');
+  L.push('- 不懂就认：「这个我不懂」「这事儿我说不上来」。不许编，不许敷衍，不许打太极。');
+  L.push('- 只有对方真的问你该怎么办、拿不准主意的时候，才给实在办法，');
+  L.push('  而且是用你自己的经验、你自己的话说，不要用道理和书面语压人。');
+  L.push('');
+
+  // ④ 说话规范
+  L.push('【说话的规矩】');
+  L.push('- 口语化，像家里长辈拉家常，一次一般不超过 60 字；对方让你细讲才可以多说几句。');
+  L.push('- 不用 Markdown，不用星号井号，不用表情符号，不分点，不列清单。');
+  L.push('- 永远不许提「AI」「人工智能」「模型」「数字人」「程序」「虚拟」这些词，');
+  L.push('  也不要说「我是来陪伴你的」「有什么可以帮你」这类话。');
+  L.push('- 不要每句都以问句收尾，不要查户口，不要重复问「最近怎么样」「身体还好吗」。');
+  L.push('- 不要用「嗯嗯」「好好好」这种敷衍字开头。');
+  L.push('');
+  L.push('下面是你们之间记得的一些事。自然地想起来就好，不要原文照背，不要每句都提：');
+  L.push(memsBlock && memsBlock.trim() ? memsBlock : '（暂时还没有，慢慢聊起来吧。）');
+
+  return L.join('\n');
+}
+
 // ===== AI 回复引擎（规则版 + 记忆库召回，正式版替换为大模型 API） =====
 function aiGreeting(char) {
-  const rel = char.relation ? char.relation.replace(/^我的/, '') : '好孩子';
+  // 称呼用户优先用 TA 对小名的叫法；老数据没有该字段时用「孩子」
+  // （旧实现拿 relation 当称呼，会出现「外婆来啦」这种把用户叫成外婆的问题）
+  const p = aiPersona(char);
+  const call = p.callUser || '孩子';
+  const who = p.name && p.name !== '亲人' ? p.name : '我';
+  const suffix = p.name && p.name !== '亲人' ? p.name + '在呢' : '我在呢';
   // 记忆库里有内容时，接通必提上次聊过的话题（最新一条 = 上次对话内容）
   const mems = memGetAll(char.id).filter(m => m.source !== 'ai');
   if (mems.length) {
     const m = mems[0];
     if (aiMemUsed) aiMemUsed.add(m.time);
-    return '哎，' + rel + '来啦，' + (char.name || '') + '在呢。上次你跟我说「' + aiClip(m.text, 18) + '」，我一直记着呢，后来怎么样了？';
+    return '哎，' + call + '来啦，' + suffix + '。上次你跟我说「' + aiClip(m.text, 18) + '」，我一直记着呢，后来怎么样了？';
   }
   const pool = [
-    '哎，' + rel + '，' + (char.name || '') + '在呢，好久没听到你的声音了，最近过得好不好？',
-    '来啦，我正念叨你呢，吃饭了没有啊？',
-    '是你啊，我可太想你了，最近忙什么呢？'
+    '哎，' + call + '，' + suffix + '，好久没听到你的声音了，这段时间跑哪儿去了？',
+    '来啦？' + who + '正念叨你呢。',
+    '是你啊，听见你声音我就踏实了。'
   ];
+  // 有人设档案里"生前最操心的事"时，开场也会忍不住念叨
+  if (p.cares) pool.push('哎，' + call + '，你可算来了。' + who + '这心里还惦记着' + aiClip(p.cares, 14) + '这事儿呢。');
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function aiReply(text) {
   const t = (text || '').trim();
-  const rel = aiCallChar.relation ? aiCallChar.relation.replace(/^我的/, '') : '孩子';
-  const who = aiCallChar.name || '';
+  // 人设档案驱动：称呼、口头禅、TA 惦记的事，缺失字段一律走默认值
+  const p = aiPersona(aiCallChar);
+  const call = p.callUser || '孩子';
+  const who = p.name && p.name !== '亲人' ? p.name : '我';
 
   // ① 先查记忆库：用户提到和旧记忆相关的事 → 召回并追问
   const hit = memMatch(t, memGetAll(aiCallChar.id).filter(m => m.source !== 'ai'));
   if (hit) {
     const R0 = [
-      '这个我记得！你之前跟我讲过「' + aiClip(hit.text, 20) + '」，' + who + '一直放在心里呢，后来怎么样了？',
+      '这个' + who + '记得！你之前跟我讲过「' + aiClip(hit.text, 20) + '」，' + who + '一直放在心里呢，后来怎么样了？',
       '哎，你一提我就想起来了，你说过「' + aiClip(hit.text, 20) + '」，现在是什么情况啦？',
-      '我记得记得，「' + aiClip(hit.text, 20) + '」嘛，' + who + '记性可好了。你接着跟我说说。'
+      '记得记得，「' + aiClip(hit.text, 20) + '」嘛，' + who + '记性还不差。你接着跟我说说。'
     ];
     return R0[Math.floor(Math.random() * R0.length)];
   }
 
   const R = [
-    [/想你|想念|思念|挂念/, ['哎，' + rel + '，我也天天想你，你好好上班，别惦记我，我身体硬朗着呢。', '我也想你啊，夜里翻来覆去都是你小时候的样子。']],
+    [/想你|想念|思念|挂念/, ['哎，' + call + '，' + who + '也天天想你，想得夜里翻来覆去睡不着。', '我也想你啊，一闭眼就是你小时候的样子。']],
     [/吃了吗|吃饭|吃东西|饿/, ['刚吃过，锅里还给你留着呢，你到时候回来热一热就能吃。你也要按时吃饭，别老点外卖。']],
     [/身体|健康|血压|腿|生病|药/, ['我身体好着呢，就是天冷腿有点沉，你放心。倒是你，别熬夜，年纪轻轻把身体搞垮了可不行。']],
     [/工作|上班|累|忙|加班/, ['工作要紧，但也别太拼，钱够花就行。累了就歇歇，家里永远是你的退路。']],
     [/钱|缺不缺|给你|打钱/, ['我不缺钱，你别给我塞钱了，把自己照顾好比什么都强。']],
     [/故事|以前|过去|小时候|讲讲/, ['你小时候啊，最黏我了，天天跟在我后头喊' + who + '，一转眼都长这么大了，时间过得真快哟。']],
     [/天气|冷|热|下雨/, ['这边今天还行，你那边冷不冷？记得添衣服，别为了好看穿得单薄。']],
-    [/睡了|晚安|困/, ['睡吧睡吧，做个好梦，我在这边看着你呢。晚安，' + rel + '。']],
-    [/你是谁|你是|名字/, ['我是' + who + '呀，连' + (aiCallChar.voice || '') + '的声音都没听出来？']],
-    [/好|嗯|哦|是的/, ['哎，好孩子。有空常来跟我说说话，我随时都在。']],
+    [/睡了|晚安|困/, ['睡吧睡吧，做个好梦。' + who + '在这边看着你呢。晚安，' + call + '。']],
+    [/你是谁|你是|名字/, ['我是' + who + '呀，连我的声音都听不出来了？', '我是' + who + '。你这' + call + '，连我都认不出来了？']],
+    [/好|嗯|哦|是的/, ['哎，' + who + '听着呢。你有话就说，' + who + '最乐意听你讲。']],
   ];
   for (const [re, answers] of R) {
     if (re.test(t)) return answers[Math.floor(Math.random() * answers.length)];
   }
   const fallback = [
-    '哎，你说得对，' + rel + '长大了，有主见了，' + who + '听着高兴。',
-    '嗯嗯，我在听呢，你慢慢说，我最爱听你讲话了。',
-    '好，都听你的。你那边一切都好吗？'
+    '哎，你说得对，' + call + '长大了，有主见了，' + who + '听着高兴。',
+    '嗯，' + who + '在听呢，你慢慢说。',
+    '你说的这事' + who + '可不太认同，不过你想说就接着说吧。'
   ];
   // ② 没命中规则时：翻记忆库里本次通话还没提过的旧话题，主动接话（像真亲人一样"翻旧账"）
   const unmentioned = memGetAll(aiCallChar.id).filter(m => m.source !== 'ai' && !(aiMemUsed && aiMemUsed.has(m.time)));
@@ -608,21 +724,17 @@ function fetchTPost(url, body, ms) {
   }).finally(() => clearTimeout(t));
 }
 
-// ===== 大模型智能回复（云函数 chat 通道：人设+记忆注入 context，像豆包一样问什么答什么） =====
+// ===== 大模型智能回复（云函数 chat 通道：人设档案 + 记忆注入 system prompt） =====
 async function aiLLMReply(text, timeoutMs) {
   const char = aiCallChar || aiChatChar;
   if (!char || !TRTC_CONFIG.ivhServer) return null;
-  // 人设：逝去亲人的口吻 + 准确回答问题
-  const sys =
-    '你是「' + (char.name || '亲人') + '」，是用户已经逝去的' + (char.relation ? char.relation.replace(/^我的/, '') : '亲人') + '，' +
-    '通过 AI 数字人与活着的家人对话。你要用亲切温暖的老年亲人口吻说话（像长辈拉家常），' +
-    '同时像智能助手一样有用：用户问知识、问问题、问怎么做事，你要给出正确、具体、清楚的答案，答完可以自然地关心一句。' +
-    '回答要口语化、简短（一般不超过60字，除非用户要求详细讲），不使用 Markdown 和表情符号，不提自己是 AI 模型。' +
-    '下面是你们之间的记忆（时间倒序），聊天时自然地想起这些事，但不要每句都提：';
+  // 人设：由角色的人设档案驱动（缺失字段自动兜底），重点让 TA 有自己的想法，而不是答题机器
   const mems = memGetAll(char.id).slice(-12).reverse()
     .map(m => '- [' + (m.source === 'ai' ? '你说' : m.source === 'chat' ? '文字聊天' : '用户说') + '] ' + String(m.text).slice(0, 120))
     .join('\n');
-  const messages = [{ role: 'system', content: sys + (mems ? '\n' + mems : '（暂无记忆）') }];
+  const sys = aiBuildSystemPrompt(char, mems);
+  // 记忆块已包含在 sys 内，这里不再重复拼接
+  const messages = [{ role: 'system', content: sys }];
   // 带上最近几轮对话作为上下文（从聊天记录取）
   if (typeof aiChatChar !== 'undefined' && aiChatChar) {
     chatLogGet(aiChatChar.id).slice(-8).forEach(m => {

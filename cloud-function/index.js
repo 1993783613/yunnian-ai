@@ -343,8 +343,9 @@ exports.main_handler = async (event) => {
       const resp = await postJSON(llmUrl, {
         model: model,
         messages: messages,
-        temperature: 0.85,
-        max_tokens: 300
+        // 稳定人设场景：温度调低，避免回答飘、重复、前后不连贯
+        temperature: 0.65,
+        max_tokens: 400
       }, { Authorization: 'Bearer ' + apiKey });
       const reply = resp.choices && resp.choices[0] && resp.choices[0].message && resp.choices[0].message.content;
       if (!reply) return json(200, { code: 4, message: '大模型返回异常: ' + JSON.stringify(resp).slice(0, 300) });

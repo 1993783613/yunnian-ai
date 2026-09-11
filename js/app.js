@@ -296,6 +296,13 @@ function handleAudioSelect(input) {
 // ===== 创建角色（保存到本机 localStorage） =====
 const CHAR_READY_AFTER_MS = 3 * 60 * 1000;  // 创建后 3 分钟变为"可通话"
 
+// 表单安全取值：元素不存在（旧缓存页面 / 裁剪版页面）时返回空串，绝不抛错
+function createFieldVal(id) {
+  const el = document.getElementById(id);
+  if (!el || typeof el.value === 'undefined') return '';
+  return String(el.value || '').trim();
+}
+
 function submitCreate() {
   const consent = document.getElementById('consentPhoto').checked;
   if (!consent) {
@@ -310,6 +317,12 @@ function submitCreate() {
 
   const age = (document.getElementById('createAge').value || '').trim();
   const relation = (document.getElementById('createRelation').value || '').trim();
+  // 人设档案（全部选填；DOM 可能不存在旧缓存页面，读取统一走安全取值，绝不抛错）
+  const personality = createFieldVal('createPersonality');
+  const speaking = createFieldVal('createSpeaking');
+  const callUser = createFieldVal('createCallUser');
+  const story = createFieldVal('createStory');
+  const cares = createFieldVal('createCares');
   // 当前选中的音色
   let voice = '未选择';
   const activeTab = document.querySelector('.voice-tab.active');
@@ -329,7 +342,13 @@ function submitCreate() {
     relation: relation,
     voice: voice,
     photo: pendingPhotoThumb || '',
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    // 人设档案（选填，为空时 ai-call.js 侧会用默认人设兜底）
+    personality: personality,
+    speaking: speaking,
+    callUser: callUser,
+    story: story,
+    cares: cares
   });
   try {
     localStorage.setItem('yn_characters', JSON.stringify(characters));
