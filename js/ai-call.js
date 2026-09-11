@@ -29,7 +29,7 @@ let aiIvhSessionId = '';
 let aiIvhTrtc = null;           // 拉数字人流的 TRTC 实例
 let aiIvhRemoteUserId = '';     // 数字人在房间里的 userId（扬声器静音用）
 let aiIvhPollTimer = null;
-const AI_CALL_VER = '20260912c'; // 通话模块版本（排查缓存用）
+const AI_CALL_VER = '20260912d'; // 通话模块版本（排查缓存用）
 let aiConnectGuard = false;     // 防止重复接通
 let aiWatchdog = null;          // 总看门狗：无论卡在哪一步，超时强制接通演示模式
 
@@ -402,10 +402,10 @@ function aiCallConnect() {
     }
   }, 1000);
 
-  // 开口第一句（真实模式延迟2.5秒发，给引擎启动口型/配音的时间）
+  // 开口第一句（真实模式延迟0.5秒发，让驱动通道握手；太短会让首句被吞）
   const greet = aiGreeting(aiCallChar);
   if (aiCallReal) {
-    setTimeout(() => { if (aiCallState === 'connected') aiSpeak(greet); }, 2500);
+    setTimeout(() => { if (aiCallState === 'connected') aiSpeak(greet); }, 500);
   } else {
     aiSpeak(greet);
   }
@@ -853,8 +853,8 @@ async function aiListenStart() {
       if (rms > 0.015) st.silence = 0;
       else st.silence += inp.length / ctx.sampleRate * 1000;
       const ms = st.len / ctx.sampleRate * 1000;
-      // 静音超过 0.9 秒（且说了至少 0.9 秒）= 一句话说完了；或最长 20 秒强制截断
-      if ((st.silence > 900 && ms > 900) || ms > 20000) {
+      // 静音超过 0.5 秒（且说了至少 0.5 秒）= 一句话说完了；或最长 15 秒强制截断（加快响应）
+      if ((st.silence > 500 && ms > 500) || ms > 15000) {
         st.speaking = false; st.silence = 0;
         const all = new Float32Array(st.len);
         let off = 0;
@@ -881,17 +881,22 @@ function aiListenStop() {
 // 一句话说完了：送云 ASR 识别 → 大模型回答 → 她开口说
 async function aiUtterance(samples, rate) {
   const ms = samples.length / rate * 1000;
-  if (ms < 700) return;   // 太短当杂音忽略
+  if (ms < 500) return;   // 太短当杂音忽略（放宽到500ms，配合更短的VAD阈值）
   const wav = aiFloatToWav(samples, rate);
   const u8 = new Uint8Array(wav);
   let bin = '';
   for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
   try {
-    const resp = await cfPost('asr', { format: 'wav', audio: btoa(bin) }, 25000);
+    const t1 = Date.now();
+    aiLog('开始识别 ' + Math.round(ms) + 'ms 音频');
+    const resp = await cfPost('asr', { format: 'wav', audio: btoa(bin) }, 12000);
     const d = await resp.json().catch(() => ({}));
+    aiLog('ASR 耗时 ' + (Date.now() - t1) + 'ms');
     if (d.code === 0 && d.text) {
       aiShowUserBubble(d.text);
+      const t2 = Date.now();
       const reply = await aiReplySmart(d.text);
+      aiLog('LLM 耗时 ' + (Date.now() - t2) + 'ms');
       aiSpeak(reply);
     } else if (d.message) {
       aiLog('识别: ' + String(d.message).slice(0, 60));
