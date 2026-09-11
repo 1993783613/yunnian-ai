@@ -729,7 +729,7 @@ async function aiLLMReply(text, timeoutMs) {
   const char = aiCallChar || aiChatChar;
   if (!char || !TRTC_CONFIG.ivhServer) return null;
   // 人设：由角色的人设档案驱动（缺失字段自动兜底），重点让 TA 有自己的想法，而不是答题机器
-  const mems = memGetAll(char.id).slice(-12).reverse()
+  const mems = memGetAll(char.id).slice(0, 12).reverse()
     .map(m => '- [' + (m.source === 'ai' ? '你说' : m.source === 'chat' ? '文字聊天' : '用户说') + '] ' + String(m.text).slice(0, 120))
     .join('\n');
   const sys = aiBuildSystemPrompt(char, mems);
