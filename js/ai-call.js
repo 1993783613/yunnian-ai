@@ -29,7 +29,7 @@ let aiIvhSessionId = '';
 let aiIvhTrtc = null;           // 拉数字人流的 TRTC 实例
 let aiIvhRemoteUserId = '';     // 数字人在房间里的 userId（扬声器静音用）
 let aiIvhPollTimer = null;
-const AI_CALL_VER = '20260912e'; // 通话模块版本（排查缓存用）
+const AI_CALL_VER = '20260912f'; // 通话模块版本（排查缓存用）
 let aiConnectGuard = false;     // 防止重复接通
 let aiWatchdog = null;          // 总看门狗：无论卡在哪一步，超时强制接通演示模式
 
@@ -327,7 +327,7 @@ function aiLog(msg) {
   while (box.children.length > 6) box.removeChild(box.firstChild);
 }
 
-// ===== 真实数字人说话（音频驱动：Edge-TTS 合成 + SEND_AUDIO 推流，照片形象唯一出声方式） =====
+// ===== 真实数字人说话（音频驱动：Edge-TTS 合成 + wss SEND_AUDIO 推流，照片形象唯一出声方式） =====
 async function ivhSpeak(text) {
   const sub = document.getElementById('aicSubtitle');
   sub.textContent = text;
@@ -335,15 +335,16 @@ async function ivhSpeak(text) {
   clearTimeout(ivhSpeak._t);
   ivhSpeak._t = setTimeout(() => { sub.style.display = 'none'; }, 12000);
   if (!aiIvhSessionId) { aiLog('驱动跳过：无会话'); return; }
-  const doSpeak = async () => {
-    // speak 内部链路：TTS合成(~1s) + ffmpeg转码(~0.3s) + wss推流(音频时长)，超时给 20s
-    const resp = await cfPost('speak', { sessionId: aiIvhSessionId, text: text }, 20000);
+  const doDrive = async () => {
+    // 走 drive + mode=audio，云函数内部完成 TTS 合成 + PCM 转码 + wss 推流
+    // 链路约 1-2s 起开始说话（看文本长度），超时给 25s
+    const resp = await cfPost('drive', { sessionId: aiIvhSessionId, text: text, mode: 'audio' }, 25000);
     const d = await resp.json().catch(() => ({}));
     return d.code === 0;
   };
   try {
-    let ok = await doSpeak();
-    if (!ok) { aiLog('说话失败，2秒后重试'); await aiSleep(2000); ok = await doSpeak(); }
+    let ok = await doDrive();
+    if (!ok) { aiLog('说话失败，2秒后重试'); await aiSleep(2000); ok = await doDrive(); }
     aiLog(ok ? '说话成功 ✓' : '说话仍失败（看云函数日志）');
   } catch (e) {
     aiLog('说话异常: ' + (e.message || e));

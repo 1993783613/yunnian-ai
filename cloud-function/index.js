@@ -422,51 +422,44 @@ exports.main_handler = async (event) => {
 
   // ===== 6. 文本驱动（数字人开口说话 + 口型同步） =====
   // variant: 1={Text} 2={Text,ChatCommand:'NotUseChat'}(默认) 3={Type:0,Text} —— 便于远程排查驱动报错
+  // mode='audio'：照片形象唯一出声方式——Edge-TTS 合成 + wss SEND_AUDIO 推流
   if (action === 'drive') {
     try {
       const text = (query.text || '').slice(0, 4000);
+      const sessionId = query.sessionId;
       if (!text) return json(400, { code: 1, message: '缺少 text' });
+      if (!sessionId) return json(400, { code: 1, message: '缺少 sessionId' });
+
+      // 音频驱动模式：Edge-TTS 合成 → 纯 JS 解码转 PCM → wss SEND_AUDIO 推流
+      if (query.mode === 'audio') {
+        const mp3 = await edgeTts(text);
+        if (!mp3 || mp3.length < 100) return json(500, { code: 2, message: 'TTS 合成失败' });
+        const pcm = await mp3ToPcm(mp3);
+        if (!pcm || pcm.length < 100) return json(500, { code: 3, message: 'PCM 转码失败' });
+        await sendAudioViaWss(sessionId, pcm);
+        return json(200, { code: 0, mode: 'audio', pcmBytes: pcm.length });
+      }
+
+      // 默认：原文本驱动（向后兼容 v7 行为）
       let Data;
       if (query.variant === '1') Data = { Text: text };
       else if (query.variant === '3') Data = { Type: 0, Text: text };
       else Data = { Text: text, ChatCommand: 'NotUseChat' };
       const resp = await ivhPost('/v2/ivh/interactdriver/interactdriverservice/command', {
         ReqId: uuid32(),
-        SessionId: query.sessionId,
+        SessionId: sessionId,
         Command: 'SEND_TEXT',
         Data: Data
       });
-      return json(200, { code: 0, resp: JSON.stringify(resp).slice(0, 400) });
+      return json(200, { code: 0, mode: 'text', resp: JSON.stringify(resp).slice(0, 400) });
     } catch (err) {
       return json(500, { code: 4, message: err.message });
     }
   }
 
-  // ===== 6.5. speak：音频驱动说话（照片形象唯一能出声的方式） =====
-  // 照片形象文本驱动 TtsSupport:false（只动口型没声音），必须走音频驱动：
-  // 文本 → Edge-TTS 合成 MP3 → ffmpeg 转 16k PCM → wss SEND_AUDIO 推流 → 数字人出声+口型
+  // ===== 6.5. speak：兼容旧前端（已合并到 drive mode=audio，这里保留只是不报 400） =====
   if (action === 'speak') {
-    try {
-      const text = (query.text || '').slice(0, 200);
-      const sessionId = query.sessionId;
-      if (!text) return json(400, { code: 1, message: '缺少 text' });
-      if (!sessionId) return json(400, { code: 1, message: '缺少 sessionId' });
-
-      // 1. Edge-TTS 合成 MP3
-      const mp3 = await edgeTts(text);
-      if (!mp3 || mp3.length < 100) return json(500, { code: 2, message: 'TTS 合成失败' });
-
-      // 2. ffmpeg 转 16k PCM
-      const pcm = await mp3ToPcm(mp3);
-      if (!pcm || pcm.length < 100) return json(500, { code: 3, message: 'PCM 转码失败' });
-
-      // 3. wss 推音频给数字人
-      await sendAudioViaWss(sessionId, pcm);
-
-      return json(200, { code: 0, message: 'ok', pcmBytes: pcm.length });
-    } catch (err) {
-      return json(500, { code: 4, message: 'speak 失败: ' + err.message });
-    }
+    return json(400, { code: 1, message: 'speak 已废弃，请改用 drive + mode=audio（v8 起）' });
   }
 
   // ===== 7. 关闭会话（释放并发） =====
