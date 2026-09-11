@@ -172,10 +172,14 @@ npx serve .
    - 创建方式：**使用模板函数 / 从零开始**（选从零开始）
    - 提交方法：**本地上传 ZIP 包** → 选择 `yunnian-usersig-scf.zip`
    - 环境变量（关键！在「高级配置」里添加）：
-     | 键 | 值 |
-     |----|-----|
-     | `SDKAPPID` | `1600160855` |
-     | `SECRETKEY` | 你的 TRTC 应用密钥（应用详情页复制） |
+     | 键 | 值 | 必填 |
+     |----|-----|----|
+     | `SDKAPPID` | `1600160855` | ✅ |
+     | `SECRETKEY` | 你的 TRTC 应用密钥（应用详情页复制） | ✅ |
+     | `IVH_APPKEY` | 数智人平台「资源管理中心 → API 接入」里的 appkey | ✅ |
+     | `IVH_ACCESSTOKEN` | 同上 accesstoken | ✅ |
+     | `IVH_PROJECT_ID` | 数智人平台「会话互动」里创建的项目里「API 接入」的 virtualmanProjectId（**绑定了形象 + 并发配额，推荐填这个**） | ✅ 强烈建议 |
+     | `IVH_IMAGE_ID` | 仅当 `IVH_PROJECT_ID` 未配置时回退使用（必须是已绑定并发的形象 ID） | ❌ 可选 |
    - 执行超时时间：改为 **10 秒**（默认 3 秒太短）
 3. 创建完成后，进入函数详情 →【函数 URL】或【触发器】→ 开启**公网访问 URL**（免鉴权）
 4. 复制函数 URL，填入 `js/config.js` 的 `userSigServer` 字段

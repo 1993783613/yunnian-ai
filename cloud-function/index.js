@@ -12,7 +12,8 @@
  * 环境变量：
  * - SDKAPPID / SECRETKEY          ：TRTC 应用（已有）
  * - IVH_APPKEY / IVH_ACCESSTOKEN  ：数智人平台「资源管理中心」获取
- * - IVH_IMAGE_ID                  ：形象资产 ID（如 95054）
+ * - IVH_IMAGE_ID                  ：形象资产 ID（用 createsessionbyasset 时需要）
+ * - IVH_PROJECT_ID                ：会话互动项目 ID（用 createsession 时需要，绑定了并发配额）
  *
  * 部署：Node.js 16.13+，依赖 tls-sig-api-v2（node_modules 已含）
  */
@@ -193,6 +194,7 @@ exports.main_handler = async (event) => {
       ivhAppkey: !!(process.env.IVH_APPKEY),
       ivhToken: !!(process.env.IVH_ACCESSTOKEN),
       imageId: process.env.IVH_IMAGE_ID || '未配置',
+      projectId: process.env.IVH_PROJECT_ID || '未配置',
       trtcAppId: process.env.SDKAPPID || '未配置'
     });
   }
@@ -208,6 +210,7 @@ exports.main_handler = async (event) => {
         code: 0,
         total: mans.length,
         currentImageId: process.env.IVH_IMAGE_ID || '未配置',
+        currentProjectId: process.env.IVH_PROJECT_ID || '未配置',
         avatars: mans.map(m => ({
           key: m.VirtualmanKey,
           name: m.AnchorName,
@@ -224,6 +227,7 @@ exports.main_handler = async (event) => {
   }
 
   // ===== 3. 创建数字人会话 =====
+  // 优先用项目 ID 建流（项目已绑定形象 + 并发配额），降级用形象 ID 建流
   if (action === 'create') {
     try {
       const sdkAppId = Number(process.env.SDKAPPID);
@@ -235,20 +239,41 @@ exports.main_handler = async (event) => {
       const api = new tls.Api(sdkAppId, secretKey);
       const vUserSig = api.genSig(vUserId, SIG_EXPIRE_SECONDS);
 
-      const resp = await ivhPost('/v2/ivh/sessionmanager/sessionmanagerservice/createsessionbyasset', {
-        ReqId: uuid32(),
-        AssetVirtualmanKey: process.env.IVH_IMAGE_ID || '95054',
-        UserId: vUserId,
-        Protocol: 'trtc',
-        DriverType: 1,
-        ProtocolOption: {
-          TrtcUseExternalApp: true,
-          TrtcAppId: String(sdkAppId),
-          TrtcRoomId: roomId,
-          TrtcUserSig: vUserSig,
-          TrtcPrivateMapKey: 'dummy'
-        }
-      });
+      const projectId = process.env.IVH_PROJECT_ID;
+      let resp;
+      if (projectId) {
+        // 路径 A：项目 ID 建流（推荐，已绑并发）
+        resp = await ivhPost('/v2/ivh/sessionmanager/sessionmanagerservice/createsession', {
+          ReqId: uuid32(),
+          VirtualmanProjectId: projectId,
+          UserId: vUserId,
+          Protocol: 'trtc',
+          DriverType: 1,
+          ProtocolOption: {
+            TrtcUseExternalApp: true,
+            TrtcAppId: String(sdkAppId),
+            TrtcRoomId: roomId,
+            TrtcUserSig: vUserSig,
+            TrtcPrivateMapKey: 'dummy'
+          }
+        });
+      } else {
+        // 路径 B：形象 ID 建流（回退方案，要求并发配额已绑到形象上）
+        resp = await ivhPost('/v2/ivh/sessionmanager/sessionmanagerservice/createsessionbyasset', {
+          ReqId: uuid32(),
+          AssetVirtualmanKey: process.env.IVH_IMAGE_ID || '95054',
+          UserId: vUserId,
+          Protocol: 'trtc',
+          DriverType: 1,
+          ProtocolOption: {
+            TrtcUseExternalApp: true,
+            TrtcAppId: String(sdkAppId),
+            TrtcRoomId: roomId,
+            TrtcUserSig: vUserSig,
+            TrtcPrivateMapKey: 'dummy'
+          }
+        });
+      }
 
       const p = resp.Payload || {};
       if (!p.SessionId) {
@@ -259,7 +284,8 @@ exports.main_handler = async (event) => {
         sessionId: p.SessionId,
         roomId: roomId,
         vUserId: vUserId,
-        sessionStatus: p.SessionStatus
+        sessionStatus: p.SessionStatus,
+        usedProjectId: !!projectId
       });
     } catch (err) {
       return json(500, { code: 4, message: err.message });
