@@ -81,7 +81,9 @@ async function ivhPost(path, payload) {
   if (!url) throw new Error('云函数未配置 IVH_APPKEY / IVH_ACCESSTOKEN 环境变量');
   const resp = await postJSON(url, { Header: {}, Payload: payload });
   if (resp.Header && resp.Header.Code !== 0 && resp.Header.Code !== undefined) {
-    throw new Error('IVH 接口错误 Code=' + resp.Header.Code + ' ' + (resp.Header.Message || ''));
+    const err = new Error('IVH 接口错误 Code=' + resp.Header.Code + ' ' + (resp.Header.Message || ''));
+    err.rawResponse = JSON.stringify(resp).slice(0, 800);
+    throw err;
   }
   return resp;
 }
@@ -288,7 +290,40 @@ exports.main_handler = async (event) => {
         usedProjectId: !!projectId
       });
     } catch (err) {
-      return json(500, { code: 4, message: err.message });
+      // 调试：把 IVH 原始响应也带出来
+      const raw = err.rawResponse ? err.rawResponse.slice(0, 600) : '(no raw)';
+      return json(500, { code: 4, message: err.message, ivhRaw: raw });
+    }
+  }
+
+  // ===== 3.5 调试专用：直接打 IVH 看错误原始形态 + 项目 ID 是否存在 =====
+  if (action === 'create_diag') {
+    const projectId = process.env.IVH_PROJECT_ID;
+    const imageId = process.env.IVH_IMAGE_ID;
+    try {
+      // 试验 A：直接 createsession 当前 projectId
+      const a = await ivhPost('/v2/ivh/sessionmanager/sessionmanagerservice/createsession', {
+        ReqId: uuid32(),
+        VirtualmanProjectId: projectId,
+        UserId: 'diag_' + Math.random().toString(36).slice(2, 8),
+        Protocol: 'trtc',
+        DriverType: 1
+      });
+      return json(200, { diag: 'A createsession ok', resp: JSON.stringify(a).slice(0, 600) });
+    } catch (errA) {
+      try {
+        // 试验 B：createsessionbyasset 当前 imageId（备用诊断）
+        const b = await ivhPost('/v2/ivh/sessionmanager/sessionmanagerservice/createsessionbyasset', {
+          ReqId: uuid32(),
+          AssetVirtualmanKey: imageId,
+          UserId: 'diag_' + Math.random().toString(36).slice(2, 8),
+          Protocol: 'trtc',
+          DriverType: 1
+        });
+        return json(200, { diag: 'A 失败但 B 成功', aErr: errA.message, bResp: JSON.stringify(b).slice(0, 600) });
+      } catch (errB) {
+        return json(500, { diag: 'A 和 B 都失败', aErr: errA.message, bErr: errB.message, projectId, imageId });
+      }
     }
   }
 
