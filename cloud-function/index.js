@@ -197,7 +197,10 @@ exports.main_handler = async (event) => {
       ivhToken: !!(process.env.IVH_ACCESSTOKEN),
       imageId: process.env.IVH_IMAGE_ID || '未配置',
       projectId: process.env.IVH_PROJECT_ID || '未配置',
-      trtcAppId: process.env.SDKAPPID || '未配置'
+      trtcAppId: process.env.SDKAPPID || '未配置',
+      // 调试：暴露当前环境变量的前 8 位（用于核对是否配置错值）
+      appkeyPrefix: (process.env.IVH_APPKEY || '').slice(0, 8),
+      tokenPrefix: (process.env.IVH_ACCESSTOKEN || '').slice(0, 8)
     });
   }
 
