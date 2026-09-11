@@ -4,6 +4,9 @@
   "description": "云念AI - TRTC UserSig 签发服务（腾讯云函数）",
   "main": "index.js",
   "dependencies": {
+    "mpg123-decoder": "^1.0.3",
+    "msedge-tts": "^2.0.7",
+    "opusscript": "^0.1.1",
     "tls-sig-api-v2": "^1.0.2"
   }
 }

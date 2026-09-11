@@ -7,7 +7,8 @@
  * 3. status   — 查询会话状态（1=进行中/已就绪）
  * 4. start    — 开启会话（流就绪后必须调用才能驱动）
  * 5. drive    — 文本驱动（数字人 TTS + 口型同步说话）
- * 6. close    — 关闭会话（停止推流，释放并发）
+ * 6. speak    — 音频驱动说话（Edge-TTS 合成 → ffmpeg 转 PCM → wss SEND_AUDIO 推流）
+ * 7. close    — 关闭会话（停止推流，释放并发）
  *
  * 环境变量：
  * - SDKAPPID / SECRETKEY          ：TRTC 应用（已有）
@@ -15,11 +16,13 @@
  * - IVH_IMAGE_ID                  ：形象资产 ID（用 createsessionbyasset 时需要）
  * - IVH_PROJECT_ID                ：会话互动项目 ID（用 createsession 时需要，绑定了并发配额）
  *
- * 部署：Node.js 16.13+，依赖 tls-sig-api-v2（node_modules 已含）
+ * 部署：Node.js 16.13+，依赖 tls-sig-api-v2 / msedge-tts / ffmpeg-static（node_modules 已含）
  */
 
 const tls = require('tls-sig-api-v2');
 const https = require('https');
+const { MsEdgeTTS, OUTPUT_FORMAT } = require('msedge-tts');
+const { MPEGDecoder } = require('mpg123-decoder');
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -49,6 +52,119 @@ function ivhSignUrl(path) {
   const hmac = require('crypto').createHmac('sha256', token).update(content).digest('base64');
   const sign = encodeURIComponent(hmac);
   return 'https://' + GW_HOST + path + '?' + content + '&signature=' + sign;
+}
+
+// ===== IVH 长连接签名：appkey + requestid + timestamp 三参数按字典序排序后签名 =====
+// 关键：音频驱动的 wss 长连接必须携带 requestid=SessionId，且 requestid 也要参与签名
+function ivhWssUrl(path, sessionId) {
+  const appkey = process.env.IVH_APPKEY || '';
+  const token = process.env.IVH_ACCESSTOKEN || '';
+  if (!appkey || !token) return null;
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const content = 'appkey=' + appkey + '&requestid=' + sessionId + '&timestamp=' + timestamp;
+  const hmac = require('crypto').createHmac('sha256', token).update(content).digest('base64');
+  const sign = encodeURIComponent(hmac);
+  return 'wss://' + GW_HOST + path + '?appkey=' + appkey + '&requestid=' + sessionId + '&timestamp=' + timestamp + '&signature=' + sign;
+}
+
+// ===== Edge-TTS 合成音频，返回 MP3 Buffer =====
+// 音色：zh-CN-YunxiNeural（云希，年轻男声，适合「二大爷」的亲切邻家感）
+async function edgeTts(text) {
+  const tts = new MsEdgeTTS();
+  const voice = process.env.TTS_VOICE || 'zh-CN-YunxiNeural';
+  await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+  const { audioStream } = tts.toStream(text);
+  const chunks = [];
+  audioStream.on('data', (c) => chunks.push(c));
+  await new Promise((res, rej) => { audioStream.on('end', res); audioStream.on('error', rej); });
+  return Buffer.concat(chunks);
+}
+
+// ===== 纯 JS 转码：MP3 -> PCM 16kHz 16bit 单声道（mpg123-decoder 解码 + 线性重采样） =====
+async function mp3ToPcm(mp3Buf) {
+  const decoder = new MPEGDecoder();
+  await decoder.ready;
+  const decoded = decoder.decode(mp3Buf);
+  const src = decoded.channelData[0]; // 左声道（单声道化）
+  const srcRate = decoded.sampleRate; // Edge-TTS 输出 24000
+  const dstRate = 16000;
+  const ratio = srcRate / dstRate;
+  const dstLen = Math.floor(src.length / ratio);
+  const pcm16 = new Int16Array(dstLen);
+  for (let i = 0; i < dstLen; i++) {
+    const pos = i * ratio;
+    const i0 = Math.floor(pos);
+    const frac = pos - i0;
+    const i1 = Math.min(i0 + 1, src.length - 1);
+    const v = src[i0] * (1 - frac) + src[i1] * frac;
+    pcm16[i] = Math.max(-32768, Math.min(32767, Math.round(v * 32768)));
+  }
+  decoder.free();
+  return Buffer.from(pcm16.buffer);
+}
+
+// ===== 通过 wss 长连接把 PCM 音频分片推给数字人（SEND_AUDIO） =====
+// 片包 160ms = 5120 字节（16k * 2字节 * 0.16s）；前6片最快发，之后每120ms一片；最后发 IsFinal=true 空包
+function sendAudioViaWss(sessionId, pcmBuf) {
+  return new Promise((resolve, reject) => {
+    const wsUrl = ivhWssUrl('/v2/ws/ivh/streammanager/streamservice/commandchannel', sessionId);
+    if (!wsUrl) return reject(new Error('未配置 IVH_APPKEY / IVH_ACCESSTOKEN'));
+    const WebSocket = globalThis.WebSocket;
+    const ws = new WebSocket(wsUrl);
+    const reqId = uuid32();
+    const CHUNK = 5120; // 160ms
+    let seq = 0;
+    let done = false;
+
+    const finish = (err) => {
+      if (done) return;
+      done = true;
+      try { ws.close(); } catch (e) {}
+      err ? reject(err) : resolve();
+    };
+
+    const timer = setTimeout(() => finish(new Error('推音频超时')), 30000);
+
+    ws.addEventListener('open', () => {
+      const total = pcmBuf.length;
+      let offset = 0;
+      let sent = 0;
+
+      const sendNext = () => {
+        if (offset >= total) {
+          // 发 final 包
+          ws.send(JSON.stringify({ Header: {}, Payload: { ReqId: reqId, SessionId: sessionId, Command: 'SEND_AUDIO', Data: { Audio: '', Seq: ++seq, IsFinal: true } } }));
+          clearTimeout(timer);
+          finish();
+          return;
+        }
+        const end = Math.min(offset + CHUNK, total);
+        const chunk = pcmBuf.subarray(offset, end);
+        offset = end;
+        seq++;
+        ws.send(JSON.stringify({ Header: {}, Payload: { ReqId: reqId, SessionId: sessionId, Command: 'SEND_AUDIO', Data: { Audio: chunk.toString('base64'), Seq: seq, IsFinal: false } } }));
+        sent++;
+        // 前6片立即发，之后每120ms一片（保持实时率[0.75,1]）
+        const delay = sent <= 6 ? 0 : 120;
+        setTimeout(sendNext, delay);
+      };
+      sendNext();
+    });
+
+    ws.addEventListener('message', (e) => {
+      // 监听下行，若返回错误码则记录（不中断，正常播报也会返回 speak_start/speak_over）
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.Header && msg.Header.Code !== 0) {
+          // 记录错误，但继续推完
+          console.log('IVH 下行异常:', msg.Header.Code, msg.Header.Message);
+        }
+      } catch (err) {}
+    });
+
+    ws.addEventListener('error', (e) => finish(new Error('wss 连接失败: ' + (e.message || 'unknown'))));
+    ws.addEventListener('close', () => { if (!done) finish(new Error('wss 提前关闭')); });
+  });
 }
 
 // Node 16 无 fetch，用 https 模块 POST JSON（headers 可选，用于大模型鉴权）
@@ -242,12 +358,14 @@ exports.main_handler = async (event) => {
       const vUserSig = api.genSig(vUserId, SIG_EXPIRE_SECONDS);
 
       // 形象ID建流（用本应用自己的 TRTC AppId）
+      // ★ DriverType=3（音频驱动）：照片形象文本驱动不做 TTS（TtsSupport:false，只动口型没声音），
+      //   必须走音频驱动——由 speak action 用 Edge-TTS 合成音频，再 SEND_AUDIO 推给数字人发声
       const resp = await ivhPost('/v2/ivh/sessionmanager/sessionmanagerservice/createsessionbyasset', {
         ReqId: uuid32(),
         AssetVirtualmanKey: process.env.IVH_IMAGE_ID || '95054',
         UserId: vUserId,
         Protocol: 'trtc',
-        DriverType: 1,
+        DriverType: 3,
         ProtocolOption: {
           TrtcUseExternalApp: true,
           TrtcAppId: String(sdkAppId),
@@ -321,6 +439,33 @@ exports.main_handler = async (event) => {
       return json(200, { code: 0, resp: JSON.stringify(resp).slice(0, 400) });
     } catch (err) {
       return json(500, { code: 4, message: err.message });
+    }
+  }
+
+  // ===== 6.5. speak：音频驱动说话（照片形象唯一能出声的方式） =====
+  // 照片形象文本驱动 TtsSupport:false（只动口型没声音），必须走音频驱动：
+  // 文本 → Edge-TTS 合成 MP3 → ffmpeg 转 16k PCM → wss SEND_AUDIO 推流 → 数字人出声+口型
+  if (action === 'speak') {
+    try {
+      const text = (query.text || '').slice(0, 200);
+      const sessionId = query.sessionId;
+      if (!text) return json(400, { code: 1, message: '缺少 text' });
+      if (!sessionId) return json(400, { code: 1, message: '缺少 sessionId' });
+
+      // 1. Edge-TTS 合成 MP3
+      const mp3 = await edgeTts(text);
+      if (!mp3 || mp3.length < 100) return json(500, { code: 2, message: 'TTS 合成失败' });
+
+      // 2. ffmpeg 转 16k PCM
+      const pcm = await mp3ToPcm(mp3);
+      if (!pcm || pcm.length < 100) return json(500, { code: 3, message: 'PCM 转码失败' });
+
+      // 3. wss 推音频给数字人
+      await sendAudioViaWss(sessionId, pcm);
+
+      return json(200, { code: 0, message: 'ok', pcmBytes: pcm.length });
+    } catch (err) {
+      return json(500, { code: 4, message: 'speak 失败: ' + err.message });
     }
   }
 
