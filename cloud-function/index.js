@@ -197,10 +197,7 @@ exports.main_handler = async (event) => {
       ivhToken: !!(process.env.IVH_ACCESSTOKEN),
       imageId: process.env.IVH_IMAGE_ID || '未配置',
       projectId: process.env.IVH_PROJECT_ID || '未配置',
-      trtcAppId: process.env.SDKAPPID || '未配置',
-      // 调试：暴露当前环境变量的前 8 位（用于核对是否配置错值）
-      appkeyPrefix: (process.env.IVH_APPKEY || '').slice(0, 8),
-      tokenPrefix: (process.env.IVH_ACCESSTOKEN || '').slice(0, 8)
+      trtcAppId: process.env.SDKAPPID || '未配置'
     });
   }
 
@@ -231,8 +228,8 @@ exports.main_handler = async (event) => {
     }
   }
 
-  // ===== 3. 创建数字人会话 =====
-  // 优先用项目 ID 建流（项目已绑定形象 + 并发配额），降级用形象 ID 建流
+  // ===== 3. 创建数字人会话（形象ID建流，createsessionbyasset） =====
+  // 实测结论：项目ID建流报100007（项目ID无效），形象ID建流能成功，故固定走形象建流
   if (action === 'create') {
     try {
       const sdkAppId = Number(process.env.SDKAPPID);
@@ -244,41 +241,21 @@ exports.main_handler = async (event) => {
       const api = new tls.Api(sdkAppId, secretKey);
       const vUserSig = api.genSig(vUserId, SIG_EXPIRE_SECONDS);
 
-      const projectId = process.env.IVH_PROJECT_ID;
-      let resp;
-      if (projectId) {
-        // 路径 A：项目 ID 建流（推荐，已绑并发）
-        resp = await ivhPost('/v2/ivh/sessionmanager/sessionmanagerservice/createsession', {
-          ReqId: uuid32(),
-          VirtualmanProjectId: projectId,
-          UserId: vUserId,
-          Protocol: 'trtc',
-          DriverType: 1,
-          ProtocolOption: {
-            TrtcUseExternalApp: true,
-            TrtcAppId: String(sdkAppId),
-            TrtcRoomId: roomId,
-            TrtcUserSig: vUserSig,
-            TrtcPrivateMapKey: 'dummy'
-          }
-        });
-      } else {
-        // 路径 B：形象 ID 建流（回退方案，要求并发配额已绑到形象上）
-        resp = await ivhPost('/v2/ivh/sessionmanager/sessionmanagerservice/createsessionbyasset', {
-          ReqId: uuid32(),
-          AssetVirtualmanKey: process.env.IVH_IMAGE_ID || '95054',
-          UserId: vUserId,
-          Protocol: 'trtc',
-          DriverType: 1,
-          ProtocolOption: {
-            TrtcUseExternalApp: true,
-            TrtcAppId: String(sdkAppId),
-            TrtcRoomId: roomId,
-            TrtcUserSig: vUserSig,
-            TrtcPrivateMapKey: 'dummy'
-          }
-        });
-      }
+      // 形象ID建流（用本应用自己的 TRTC AppId）
+      const resp = await ivhPost('/v2/ivh/sessionmanager/sessionmanagerservice/createsessionbyasset', {
+        ReqId: uuid32(),
+        AssetVirtualmanKey: process.env.IVH_IMAGE_ID || '95054',
+        UserId: vUserId,
+        Protocol: 'trtc',
+        DriverType: 1,
+        ProtocolOption: {
+          TrtcUseExternalApp: true,
+          TrtcAppId: String(sdkAppId),
+          TrtcRoomId: roomId,
+          TrtcUserSig: vUserSig,
+          TrtcPrivateMapKey: 'dummy'
+        }
+      });
 
       const p = resp.Payload || {};
       if (!p.SessionId) {
@@ -287,46 +264,15 @@ exports.main_handler = async (event) => {
       return json(200, {
         code: 0,
         sessionId: p.SessionId,
+        playStreamAddr: p.PlayStreamAddr,
         roomId: roomId,
         vUserId: vUserId,
         sessionStatus: p.SessionStatus,
-        usedProjectId: !!projectId
+        usedAsset: true
       });
     } catch (err) {
-      // 调试：把 IVH 原始响应也带出来
       const raw = err.rawResponse ? err.rawResponse.slice(0, 600) : '(no raw)';
       return json(500, { code: 4, message: err.message, ivhRaw: raw });
-    }
-  }
-
-  // ===== 3.5 调试专用：直接打 IVH 看错误原始形态 + 项目 ID 是否存在 =====
-  if (action === 'create_diag') {
-    const projectId = process.env.IVH_PROJECT_ID;
-    const imageId = process.env.IVH_IMAGE_ID;
-    try {
-      // 试验 A：直接 createsession 当前 projectId
-      const a = await ivhPost('/v2/ivh/sessionmanager/sessionmanagerservice/createsession', {
-        ReqId: uuid32(),
-        VirtualmanProjectId: projectId,
-        UserId: 'diag_' + Math.random().toString(36).slice(2, 8),
-        Protocol: 'trtc',
-        DriverType: 1
-      });
-      return json(200, { diag: 'A createsession ok', resp: JSON.stringify(a).slice(0, 600) });
-    } catch (errA) {
-      try {
-        // 试验 B：createsessionbyasset 当前 imageId（备用诊断）
-        const b = await ivhPost('/v2/ivh/sessionmanager/sessionmanagerservice/createsessionbyasset', {
-          ReqId: uuid32(),
-          AssetVirtualmanKey: imageId,
-          UserId: 'diag_' + Math.random().toString(36).slice(2, 8),
-          Protocol: 'trtc',
-          DriverType: 1
-        });
-        return json(200, { diag: 'A 失败但 B 成功', aErr: errA.message, bResp: JSON.stringify(b).slice(0, 600) });
-      } catch (errB) {
-        return json(500, { diag: 'A 和 B 都失败', aErr: errA.message, bErr: errB.message, projectId, imageId });
-      }
     }
   }
 
